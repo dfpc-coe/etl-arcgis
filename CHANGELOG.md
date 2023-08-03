@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.0.1
+
+- :bug: Remove Debug Code
+
 ### v2.0.0
 
 - :tada: Update to ETL@2 and support output schema
