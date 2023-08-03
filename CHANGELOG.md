@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.0.2
+
+- :bug: await schema call
+
 ### v2.0.1
 
 - :bug: Remove Debug Code

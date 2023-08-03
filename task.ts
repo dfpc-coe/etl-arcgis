@@ -138,9 +138,9 @@ export default class Task extends ETL {
 
 export async function handler(event: Event = {}) {
     if (event.type === 'schema:input') {
-        return Task.schema(SchemaType.Input);
+        return await Task.schema(SchemaType.Input);
     } else if (event.type === 'schema:output') {
-        return Task.schema(SchemaType.Output);
+        return await Task.schema(SchemaType.Output);
     } else {
         const task = new Task();
         await task.control();
