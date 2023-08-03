@@ -137,7 +137,6 @@ export default class Task extends ETL {
 }
 
 export async function handler(event: Event = {}) {
-    event.type = 'schema:output';
     if (event.type === 'schema:input') {
         return Task.schema(SchemaType.Input);
     } else if (event.type === 'schema:output') {
