@@ -124,6 +124,8 @@ export default class Task extends ETL {
 
         await new Promise<void>((resolve, reject) => {
             dumper.on('feature', (feature) => {
+                feature.id = `layer-${layer.id}-${feature.id}`
+
                 fc.features.push(feature);
             }).on('error', (err) => {
                 reject(err);
