@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.1.0
+
+- :bug: Set `feature.id`
+
 ### v2.0.2
 
 - :bug: await schema call
