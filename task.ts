@@ -134,6 +134,8 @@ export default class Task extends ETL {
             });
         });
 
+        console.log(`ok - obtained ${fc.features.length} features`);
+
         await this.submit(fc);
     }
 }

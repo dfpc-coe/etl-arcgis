@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.1.1
+
+- :rocket: Log number of features obtained
+
 ### v2.1.0
 
 - :bug: Set `feature.id`
