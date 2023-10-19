@@ -43,26 +43,11 @@ export default class Task extends ETL {
 
         if (!layer.environment.ARCGIS_URL) throw new Error('No ArcGIS_URL Provided');
 
-        if (!layer.environment.ARCGIS_HEADERS) layer.environment.ARCGIS_HEADERS = [];
-        if (!layer.environment.ARCGIS_PARAMS) layer.environment.ARCGIS_PARAMS = [];
-
-        if (!Array.isArray(layer.environment.ARCGIS_HEADERS)) throw new Error('ArcGIS_HEADERS must be an Array');
-        if (!Array.isArray(layer.environment.ARCGIS_PARAMS)) throw new Error('ArcGIS_PARAMS must be an Array');
-
         const config: EsriDumpConfigInput = {
             approach: EsriDumpConfigApproach.ITER,
             headers: {},
             params: {}
         };
-
-        for (const header of layer.environment.ARCGIS_HEADERS) {
-            if (!header.name.trim()) continue;
-            config.headers[header.name] = header.value || '';
-        }
-        for (const param of layer.environment.ARCGIS_PARAMS) {
-            if (!param.name.trim()) continue;
-            config.headers[param.name] = param.value || '';
-        }
 
         const dumper = new EsriDump(String(layer.environment.ARCGIS_URL), config);
 
