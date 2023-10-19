@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.0.0
+
+- :rocket: Switch to built in environment display
+
 ### v2.1.1
 
 - :rocket: Log number of features obtained

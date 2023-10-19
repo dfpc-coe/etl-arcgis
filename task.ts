@@ -24,57 +24,8 @@ export default class Task extends ETL {
     static async schema(type: SchemaType = SchemaType.Input): Promise<JSONSchema6> {
         if (type === SchemaType.Input) {
             return {
-                type: 'object',
-                required: ['ARCGIS_URL'],
-                properties: {
-                    'ARCGIS_URL': {
-                        type: 'string',
-                        description: 'ArcGIS MapServer URL to pull data from'
-                    },
-                    'ARCGIS_HEADERS': {
-                        type: 'array',
-                        description: 'Headers to include in the request',
-                        items: {
-                            type: 'object',
-                            required: [
-                                'key',
-                                'value'
-                            ],
-                            properties: {
-                                key: {
-                                    type: 'string'
-                                },
-                                value: {
-                                    type: 'string'
-                                }
-                            }
-                        }
-                    },
-                    'ARCGIS_PARAMS': {
-                        type: 'array',
-                        description: 'URL Params to include in the request',
-                        items: {
-                            type: 'object',
-                            required: [
-                                'key',
-                                'value'
-                            ],
-                            properties: {
-                                key: {
-                                    type: 'string'
-                                },
-                                value: {
-                                    type: 'string'
-                                }
-                            }
-                        }
-                    },
-                    'DEBUG': {
-                        type: 'boolean',
-                        default: false,
-                        description: 'Print ADSBX results in logs'
-                    }
-                }
+                // @ts-ignore
+                display: 'arcgis'
             };
         } else {
             const task = new Task();
