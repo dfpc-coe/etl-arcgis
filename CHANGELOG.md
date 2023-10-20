@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.2.0
+
+- :rocket: UnMulti Multi Geoms
+
 ### v3.1.0
 
 - :rocket: Add support for ARCGIS/ESRI Portals with Username/Password => Token
