@@ -88,7 +88,21 @@ export default class Task extends ETL {
             dumper.on('feature', (feature) => {
                 feature.id = `layer-${layer.id}-${feature.id}`
 
-                fc.features.push(feature);
+                if (feature.geometry.type.startsWith('Multi')) {
+                    feature.geometry.coordinates.forEach((coords: any, idx: number) => {
+                        fc.features.push({
+                            id: feature.id + '-' + idx,
+                            type: 'Feature',
+                            properties: feature.properties,
+                            geometry: {
+                                type: feature.geometry.type.replace('Multi', ''),
+                                coordinates: coords
+                            }
+                        });
+                    });
+                } else {
+                    fc.features.push(feature)
+                }
             }).on('error', (err) => {
                 reject(err);
             }).on('done', () => {
