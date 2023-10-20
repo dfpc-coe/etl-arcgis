@@ -49,6 +49,32 @@ export default class Task extends ETL {
             params: {}
         };
 
+        if (layer.environment.ARCGIS_TOKEN || (layer.environment.ARCGIS_PORTAL && layer.environment.ARCGIS_USERNAME && layer.environment.ARCGIS_PASSWORD)) {
+            if (!layer.environment.ARCGIS_TOKEN || Number(layer.environment.ARCGIS_EXPIRES) < +new Date()  + 1000 * 60 * 60) {
+                const res: any = await this.fetch('/api/sink/esri', 'POST', {
+                    url: layer.environment.ARCGIS_PORTAL,
+                    username: layer.environment.ARCGIS_USERNAME,
+                    password: layer.environment.ARCGIS_PASSWORD
+                });
+
+                layer.environment.ARCGIS_TOKEN = res.token;
+                layer.environment.ARCGIS_EXPIRES = res.expires;
+
+                await this.fetch(`/api/layer/${layer.id}`, 'PATCH', {
+                    environment: {
+                        ARCGIS_PORTAL: layer.environment.ARCGIS_PORTAL,
+                        ARCGIS_USERNAME: layer.environment.ARCGIS_USERNAME,
+                        ARCGIS_PASSWORD: layer.environment.ARCGIS_PASSWORD,
+                        ARCGIS_TOKEN: layer.environment.ARCGIS_TOKEN,
+                        ARCGIS_EXPIRES: layer.environment.ARCGIS_EXPIRES,
+                        ARCGIS_URL: layer.environment.ARCGIS_URL
+                    }
+                });
+            }
+
+            config.params.token = String(layer.environment.ARCGIS_TOKEN);
+        }
+
         const dumper = new EsriDump(String(layer.environment.ARCGIS_URL), config);
 
         dumper.fetch();
