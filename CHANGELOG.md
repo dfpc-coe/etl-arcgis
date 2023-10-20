@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.1.0
+
+- :rocket: Add support for ARCGIS/ESRI Portals with Username/Password => Token
+
 ### v3.0.0
 
 - :rocket: Switch to built in environment display
