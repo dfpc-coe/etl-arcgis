@@ -33,7 +33,6 @@ export default class Task extends ETL {
             const dumper = new EsriDump(String(layer.environment.ARCGIS_URL));
             const schema = await dumper.schema();
 
-            console.error(JSON.stringify(schema));
             return schema;
         }
     }
@@ -49,9 +48,16 @@ export default class Task extends ETL {
             params: {}
         };
 
+        if (layer.environment.ARCGIS_QUERY) {
+            config.params.where = String(layer.environment.ARCGIS_QUERY);
+        }
+
         if (layer.environment.ARCGIS_TOKEN || (layer.environment.ARCGIS_PORTAL && layer.environment.ARCGIS_USERNAME && layer.environment.ARCGIS_PASSWORD)) {
             if (!layer.environment.ARCGIS_TOKEN || Number(layer.environment.ARCGIS_EXPIRES) < +new Date()  + 1000 * 60 * 60) {
-                const res: any = await this.fetch('/api/sink/esri', 'POST', {
+                const res: {
+                    token: string;
+                    expires: number;
+                } = await this.fetch('/api/sink/esri', 'POST', {
                     url: layer.environment.ARCGIS_PORTAL,
                     username: layer.environment.ARCGIS_USERNAME,
                     password: layer.environment.ARCGIS_PASSWORD
@@ -66,6 +72,7 @@ export default class Task extends ETL {
                         ARCGIS_USERNAME: layer.environment.ARCGIS_USERNAME,
                         ARCGIS_PASSWORD: layer.environment.ARCGIS_PASSWORD,
                         ARCGIS_TOKEN: layer.environment.ARCGIS_TOKEN,
+                        ARCGIS_QUERY: layer.environment.ARCGIS_QUERY,
                         ARCGIS_EXPIRES: layer.environment.ARCGIS_EXPIRES,
                         ARCGIS_URL: layer.environment.ARCGIS_URL
                     }
@@ -84,12 +91,14 @@ export default class Task extends ETL {
             features: []
         };
 
+        let count = 0;
         await new Promise<void>((resolve, reject) => {
             dumper.on('feature', (feature) => {
                 feature.id = `layer-${layer.id}-${feature.id}`
+                ++count;
 
                 if (feature.geometry.type.startsWith('Multi')) {
-                    feature.geometry.coordinates.forEach((coords: any, idx: number) => {
+                    feature.geometry.coordinates.forEach((coords: Array<unknown>, idx: number) => {
                         fc.features.push({
                             id: feature.id + '-' + idx,
                             type: 'Feature',
@@ -110,7 +119,7 @@ export default class Task extends ETL {
             });
         });
 
-        console.log(`ok - obtained ${fc.features.length} features`);
+        console.log(`ok - obtained ${count} features`);
 
         await this.submit(fc);
     }

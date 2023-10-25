@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.3.0
+
+- :rocket: Add support for `ARCGIS_QUERY` Environment
+
 ### v3.2.0
 
 - :rocket: UnMulti Multi Geoms
