@@ -10,6 +10,12 @@
 
 ## Version History
 
+### v3.4.0
+
+- :tada: Add support for schema response with Token/Portal
+- :rocket: Unified ESRIDump config
+- :bug: Fix `ARCGIS_QUERY` Env
+
 ### v3.3.0
 
 - :rocket: Add support for `ARCGIS_QUERY` Environment
