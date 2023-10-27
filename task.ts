@@ -3,6 +3,7 @@ import { FeatureCollection } from 'geojson';
 import { JSONSchema6 } from 'json-schema';
 import ETL, {
     Event,
+    TaskLayer,
     SchemaType
 } from '@tak-ps/etl';
 import EsriDump, {
@@ -30,41 +31,34 @@ export default class Task extends ETL {
         } else {
             const task = new Task();
             const layer = await task.layer();
-            const dumper = new EsriDump(String(layer.environment.ARCGIS_URL));
+
+            const config: EsriDumpConfigInput = {
+                approach: EsriDumpConfigApproach.ITER,
+                headers: {},
+                params: {}
+            };
+
+            const dumper = await task.dumper(config, layer);
             const schema = await dumper.schema();
 
             return schema;
         }
     }
 
-    async control(): Promise<void> {
-        const layer = await this.layer();
-
-        if (!layer.environment.ARCGIS_URL) throw new Error('No ArcGIS_URL Provided');
-
-        const config: EsriDumpConfigInput = {
-            approach: EsriDumpConfigApproach.ITER,
-            headers: {},
-            params: {}
-        };
-
-        if (layer.environment.ARCGIS_QUERY) {
-            config.params.where = String(layer.environment.ARCGIS_QUERY);
-        }
-
+    /**
+     * Return a configured instance of ESRI Dump
+     */
+    async dumper(config: EsriDumpConfigInput, layer: TaskLayer): Promise<EsriDump> {
         if (layer.environment.ARCGIS_TOKEN || (layer.environment.ARCGIS_PORTAL && layer.environment.ARCGIS_USERNAME && layer.environment.ARCGIS_PASSWORD)) {
             if (!layer.environment.ARCGIS_TOKEN || Number(layer.environment.ARCGIS_EXPIRES) < +new Date()  + 1000 * 60 * 60) {
-                const res: {
-                    token: string;
-                    expires: number;
-                } = await this.fetch('/api/sink/esri', 'POST', {
+                const res: object = await this.fetch('/api/sink/esri', 'POST', {
                     url: layer.environment.ARCGIS_PORTAL,
                     username: layer.environment.ARCGIS_USERNAME,
                     password: layer.environment.ARCGIS_PASSWORD
                 });
 
-                layer.environment.ARCGIS_TOKEN = res.token;
-                layer.environment.ARCGIS_EXPIRES = res.expires;
+                layer.environment.ARCGIS_TOKEN = String('token' in res ? res.token : '');
+                layer.environment.ARCGIS_EXPIRES = String('expires' in res ? res.expires : '');
 
                 await this.fetch(`/api/layer/${layer.id}`, 'PATCH', {
                     environment: {
@@ -82,7 +76,25 @@ export default class Task extends ETL {
             config.params.token = String(layer.environment.ARCGIS_TOKEN);
         }
 
-        const dumper = new EsriDump(String(layer.environment.ARCGIS_URL), config);
+        return new EsriDump(String(layer.environment.ARCGIS_URL), config);
+    }
+
+    async control(): Promise<void> {
+        const layer = await this.layer();
+
+        if (!layer.environment.ARCGIS_URL) throw new Error('No ArcGIS_URL Provided');
+
+        const config: EsriDumpConfigInput = {
+            approach: EsriDumpConfigApproach.ITER,
+            headers: {},
+            params: {}
+        };
+
+        if (layer.environment.ARCGIS_QUERY) {
+            config.params.where = String(layer.environment.ARCGIS_QUERY);
+        }
+
+        const dumper = await this.dumper(config, layer);
 
         dumper.fetch();
 
@@ -98,7 +110,7 @@ export default class Task extends ETL {
                 ++count;
 
                 if (feature.geometry.type.startsWith('Multi')) {
-                    feature.geometry.coordinates.forEach((coords: Array<unknown>, idx: number) => {
+                    feature.geometry.coordinates.forEach((coords: any, idx: number) => {
                         fc.features.push({
                             id: feature.id + '-' + idx,
                             type: 'Feature',
