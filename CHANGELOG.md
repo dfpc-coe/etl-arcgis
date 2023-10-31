@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.5.0
+
+- :bug: Support count: 0 in Esri Query
+
 ### v3.4.0
 
 - :tada: Add support for schema response with Token/Portal
