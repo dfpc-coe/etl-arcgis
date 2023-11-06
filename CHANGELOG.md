@@ -10,7 +10,7 @@
 
 ## Version History
 
-### v3.6.1
+### v3.6.2
 
 - :tada: Attempt server auth if no portal is given but username/password are
 
