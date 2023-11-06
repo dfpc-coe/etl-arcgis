@@ -12,6 +12,10 @@
 
 ### v3.6.1
 
+- :tada: Attempt server auth if no portal is given but username/password are
+
+### v3.6.1
+
 - :bug: Look for Expires
 
 ### v3.6.0
