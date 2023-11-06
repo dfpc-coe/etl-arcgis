@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.6.0
+
+- :rocket: Update to generic ESRI Endpoint
+
 ### v3.5.0
 
 - :bug: Support count: 0 in Esri Query
