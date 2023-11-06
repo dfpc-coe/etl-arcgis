@@ -53,7 +53,13 @@ export default class Task extends ETL {
             (layer.environment.ARCGIS_TOKEN && layer.environment.ARCGIS_EXPIRES)
             || (layer.environment.ARCGIS_USERNAME && layer.environment.ARCGIS_PASSWORD)
         ) {
-            if (!layer.environment.ARCGIS_TOKEN || Number(layer.environment.ARCGIS_EXPIRES) < +new Date()  + 1000 * 60 * 60) {
+            delete layer.environment.ARCGIS_REFERER;
+
+            if (
+                !layer.environment.ARCGIS_TOKEN
+                || !layer.environment.ARCGIS_REFERER
+                || Number(layer.environment.ARCGIS_EXPIRES) < +new Date()  + 1000 * 60 * 60
+            ) {
                 console.log('ok - POST http://localhost:5001/api/esri')
                 const res: object = await this.fetch('/api/esri', 'POST', {
                     url: layer.environment.ARCGIS_PORTAL || layer.environment.ARCGIS_URL,
@@ -66,6 +72,7 @@ export default class Task extends ETL {
 
                     layer.environment.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
                     layer.environment.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
+                    layer.environment.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
                 }
 
                 console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
@@ -74,15 +81,17 @@ export default class Task extends ETL {
                         ARCGIS_PORTAL: layer.environment.ARCGIS_PORTAL,
                         ARCGIS_USERNAME: layer.environment.ARCGIS_USERNAME,
                         ARCGIS_PASSWORD: layer.environment.ARCGIS_PASSWORD,
-                        ARCGIS_TOKEN: layer.environment.ARCGIS_TOKEN,
                         ARCGIS_QUERY: layer.environment.ARCGIS_QUERY,
+                        ARCGIS_URL: layer.environment.ARCGIS_URL,
+                        ARCGIS_TOKEN: layer.environment.ARCGIS_TOKEN,
                         ARCGIS_EXPIRES: layer.environment.ARCGIS_EXPIRES,
-                        ARCGIS_URL: layer.environment.ARCGIS_URL
+                        ARCGIS_REFERER: layer.environment.ARCGIS_REFERER,
                     }
                 });
             }
 
             config.params.token = String(layer.environment.ARCGIS_TOKEN);
+            config.headers.Referer = String(layer.environment.ARCGIS_REFERER);
         }
 
         return new EsriDump(String(layer.environment.ARCGIS_URL), config);
