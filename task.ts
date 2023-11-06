@@ -49,7 +49,10 @@ export default class Task extends ETL {
      * Return a configured instance of ESRI Dump
      */
     async dumper(config: EsriDumpConfigInput, layer: TaskLayer): Promise<EsriDump> {
-        if (layer.environment.ARCGIS_TOKEN || (layer.environment.ARCGIS_PORTAL && layer.environment.ARCGIS_USERNAME && layer.environment.ARCGIS_PASSWORD)) {
+        if (
+            (layer.environment.ARCGIS_TOKEN && layer.environment.ARCGIS_EXPIRES)
+            || (layer.environment.ARCGIS_PORTAL && layer.environment.ARCGIS_USERNAME && layer.environment.ARCGIS_PASSWORD)
+        ) {
             if (!layer.environment.ARCGIS_TOKEN || Number(layer.environment.ARCGIS_EXPIRES) < +new Date()  + 1000 * 60 * 60) {
                 const res: object = await this.fetch('/api/esri', 'POST', {
                     url: layer.environment.ARCGIS_PORTAL,
