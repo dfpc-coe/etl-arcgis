@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.7.0
+
+- :bug: Use Referer header where possible when using a token
+
 ### v3.6.2
 
 - :tada: Attempt server auth if no portal is given but username/password are
