@@ -49,8 +49,6 @@ export default class Task extends ETL {
      * Return a configured instance of ESRI Dump
      */
     async dumper(config: EsriDumpConfigInput, layer: TaskLayer): Promise<EsriDump> {
-        console.error(layer.environment);
-
         if (
             (layer.environment.ARCGIS_TOKEN && layer.environment.ARCGIS_EXPIRES)
             || (layer.environment.ARCGIS_USERNAME && layer.environment.ARCGIS_PASSWORD)
@@ -63,8 +61,12 @@ export default class Task extends ETL {
                     password: layer.environment.ARCGIS_PASSWORD
                 });
 
-                layer.environment.ARCGIS_TOKEN = String('token' in res ? res.token : '');
-                layer.environment.ARCGIS_EXPIRES = String('expires' in res ? res.expires : '');
+                if ('auth' in res && typeof res.auth === 'object') {
+                    res.auth as object;
+
+                    layer.environment.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
+                    layer.environment.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
+                }
 
                 console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
                 await this.fetch(`/api/layer/${layer.id}`, 'PATCH', {
