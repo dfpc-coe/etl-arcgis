@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.6.1
+
+- :bug: Look for Expires
+
 ### v3.6.0
 
 - :rocket: Update to generic ESRI Endpoint
