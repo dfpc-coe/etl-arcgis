@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.8.0
+
+- :rocket: ESRI-Dump will now output Dates as Strings
+
 ### v3.7.0
 
 - :bug: Use Referer header where possible when using a token
