@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.9.1
+
+- :arrow_up: Bump ESRI-Dump Version
+
 ### v3.9.0
 
 - :tada: Add support for local TimeZone mapping
