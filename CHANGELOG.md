@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.9.0
+
+- :tada: Add support for local TimeZone mapping
+
 ### v3.8.0
 
 - :rocket: ESRI-Dump will now output Dates as Strings

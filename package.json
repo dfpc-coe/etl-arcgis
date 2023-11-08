@@ -23,6 +23,7 @@
     "dependencies": {
         "@tak-ps/etl": "^2.1.0",
         "@types/geojson": "^7946.0.10",
-        "esri-dump": "^5.0.0"
+        "esri-dump": "^5.0.0",
+        "moment-timezone": "^0.5.43"
     }
 }

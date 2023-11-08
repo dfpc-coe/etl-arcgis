@@ -1,12 +1,14 @@
 import fs from 'node:fs';
-import { FeatureCollection } from 'geojson';
+import { FeatureCollection, Feature } from 'geojson';
 import { JSONSchema6 } from 'json-schema';
+import moment from 'moment-timezone';
 import ETL, {
     Event,
     TaskLayer,
     SchemaType
 } from '@tak-ps/etl';
 import EsriDump, {
+    Geometry,
     EsriDumpConfigInput,
     EsriDumpConfigApproach
 } from 'esri-dump';
@@ -86,6 +88,7 @@ export default class Task extends ETL {
                         ARCGIS_TOKEN: layer.environment.ARCGIS_TOKEN,
                         ARCGIS_EXPIRES: layer.environment.ARCGIS_EXPIRES,
                         ARCGIS_REFERER: layer.environment.ARCGIS_REFERER,
+                        ARCGIS_TIMEZONE: layer.environment.ARCGIS_TIMEZONE,
                     }
                 });
             }
@@ -114,7 +117,24 @@ export default class Task extends ETL {
 
         const dumper = await this.dumper(config, layer);
 
-        dumper.fetch();
+        if (layer.environment.ARCGIS_TIMEZONE) {
+            let dates = new Set();
+
+            dumper.fetch({
+                map: (g: Geometry, f: Feature) => {
+                    for (const prop in g.schema.properties) {
+                        if (typeof g.schema.properties[prop] === 'boolean') continue;
+                        const schema = g.schema.properties[prop] as JSONSchema6;
+                        if (schema.format === 'date-time') {
+                            f.properties[prop] = moment(f.properties[prop]).tz(String(layer.environment.ARCGIS_TIMEZONE)).format('YYYY-MM-DD HH:mm z');
+                        }
+                    }
+                    return f;
+                }
+            });
+        } else {
+            dumper.fetch();
+        }
 
         const fc: FeatureCollection = {
             type: 'FeatureCollection',
