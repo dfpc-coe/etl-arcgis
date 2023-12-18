@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.9.2
+
+- :rocket: Update GH Actions
+
 ### v3.9.1
 
 - :arrow_up: Bump ESRI-Dump Version

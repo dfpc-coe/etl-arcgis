@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - '*'
+
 permissions:
   id-token: write
   contents: read
@@ -13,12 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws-us-gov:iam::${{secrets.AWS_ACCOUNT_ID}}:role/Github-ECR-Builder
           role-session-name: GithubECRBuilder
@@ -33,10 +34,27 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Docker Tag ETL
         run: docker tag etl ${{secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{secrets.AWS_REGION}}.amazonaws.com/coe-ecr-etl-tasks:${{github.event.repository.name}}-${{steps.tag.outputs.tag}}
 
       - name: Docker Push ETL
         run: docker push ${{secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{secrets.AWS_REGION}}.amazonaws.com/coe-ecr-etl-tasks:${{github.event.repository.name}}-${{steps.tag.outputs.tag}}
+
+      - name: Configure AWS Credentials (STAGING)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{secrets.AWS_STAGING_ACCOUNT_ID}}:role/Github-ECR-Builder
+          role-session-name: GithubECRBuilder
+          aws-region: ${{secrets.AWS_STAGING_REGION}}
+
+      - name: Login to Amazon ECR (STAGING)
+        id: login-ecr-staging
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker Tag ETL (STAGING)
+        run: docker tag etl ${{secrets.AWS_STAGING_ACCOUNT_ID}}.dkr.ecr.${{secrets.AWS_STAGING_REGION}}.amazonaws.com/coe-ecr-etl-tasks:${{github.event.repository.name}}-${{steps.tag.outputs.tag}}
+
+      - name: Docker Push ETL (STAGING)
+        run: docker push ${{secrets.AWS_STAGING_ACCOUNT_ID}}.dkr.ecr.${{secrets.AWS_STAGING_REGION}}.amazonaws.com/coe-ecr-etl-tasks:${{github.event.repository.name}}-${{steps.tag.outputs.tag}}
