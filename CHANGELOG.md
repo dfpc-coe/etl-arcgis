@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v4.0.0
+
+- :rocket: Update to latest token strategy
+
 ### v3.9.2
 
 - :rocket: Update GH Actions
