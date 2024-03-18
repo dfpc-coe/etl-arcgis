@@ -141,11 +141,9 @@ export default class Task extends ETL {
             features: []
         };
 
-        let count = 0;
         await new Promise<void>((resolve, reject) => {
             dumper.on('feature', (feature) => {
                 feature.id = `layer-${layer.id}-${feature.id}`
-                ++count;
 
                 if (feature.geometry.type.startsWith('Multi')) {
                     feature.geometry.coordinates.forEach((coords: any, idx: number) => {
@@ -169,7 +167,7 @@ export default class Task extends ETL {
             });
         });
 
-        console.log(`ok - obtained ${count} features`);
+        console.log(`ok - obtained ${fc.features.length} features`);
 
         await this.submit(fc);
     }
