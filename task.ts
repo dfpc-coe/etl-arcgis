@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import { FeatureCollection, Feature } from 'geojson';
 import { JSONSchema6 } from 'json-schema';
 import moment from 'moment-timezone';

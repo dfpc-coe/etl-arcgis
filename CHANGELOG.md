@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.1.3
+
+- :bug: Fix Lints
+
 ### v5.1.2
 
 - :arrow_up: Use latest version of base
