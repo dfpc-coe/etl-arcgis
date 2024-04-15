@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.1.2
+
+- :arrow_up: Use latest version of base
+
 ### v5.1.1
 
 - :bug: Use new instance method for schema
