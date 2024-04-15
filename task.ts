@@ -10,7 +10,7 @@ import EsriDump, {
 } from 'esri-dump';
 
 export default class Task extends ETL {
-    static async schema(type: SchemaType = SchemaType.Input): Promise<JSONSchema6> {
+    async schema(type: SchemaType = SchemaType.Input): Promise<JSONSchema6> {
         if (type === SchemaType.Input) {
             return {
                 // @ts-expect-error Not Standard JSON Schema

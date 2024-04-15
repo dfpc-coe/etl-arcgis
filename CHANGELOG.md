@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.1.1
+
+- :bug: Use new instance method for schema
+
 ### v5.1.0
 
 - :rocket: Update to use new default fns
