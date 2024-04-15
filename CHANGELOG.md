@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.1.0
+
+- :rocket: Update to use new default fns
+
 ### v5.0.1
 
 - :arrow_up: Move ESLint to devDeps

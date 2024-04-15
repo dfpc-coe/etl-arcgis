@@ -2,26 +2,12 @@ import fs from 'node:fs';
 import { FeatureCollection, Feature } from 'geojson';
 import { JSONSchema6 } from 'json-schema';
 import moment from 'moment-timezone';
-import ETL, {
-    Event,
-    TaskLayer,
-    SchemaType
-} from '@tak-ps/etl';
+import ETL, { Event, SchemaType, handler as internal, local, env } from '@tak-ps/etl';
 import EsriDump, {
     Geometry,
     EsriDumpConfigInput,
     EsriDumpConfigApproach
 } from 'esri-dump';
-
-try {
-    const dotfile = new URL('.env', import.meta.url);
-
-    fs.accessSync(dotfile);
-
-    Object.assign(process.env, JSON.parse(String(fs.readFileSync(dotfile))));
-} catch (err) {
-    console.log('ok - no .env file loaded');
-}
 
 export default class Task extends ETL {
     static async schema(type: SchemaType = SchemaType.Input): Promise<JSONSchema6> {
@@ -175,15 +161,9 @@ export default class Task extends ETL {
     }
 }
 
+env(import.meta.url)
+await local(new Task(), import.meta.url);
 export async function handler(event: Event = {}) {
-    if (event.type === 'schema:input') {
-        return await Task.schema(SchemaType.Input);
-    } else if (event.type === 'schema:output') {
-        return await Task.schema(SchemaType.Output);
-    } else {
-        const task = new Task();
-        await task.control();
-    }
+    return await internal(new Task(), event);
 }
-
-if (import.meta.url === `file://${process.argv[1]}`) handler();
+ 
