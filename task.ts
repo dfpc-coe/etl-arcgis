@@ -1,7 +1,6 @@
 import { FeatureCollection, Feature } from 'geojson';
-import { JSONSchema6 } from 'json-schema';
-import moment from 'moment-timezone';
-import ETL, { Event, SchemaType, handler as internal, local, env } from '@tak-ps/etl';
+import { TSchema } from '@sinclair/typebox';
+import ETL, { TaskLayer, Event, SchemaType, handler as internal, local, env } from '@tak-ps/etl';
 import EsriDump, {
     Geometry,
     EsriDumpConfigInput,
@@ -9,12 +8,13 @@ import EsriDump, {
 } from 'esri-dump';
 
 export default class Task extends ETL {
-    async schema(type: SchemaType = SchemaType.Input): Promise<JSONSchema6> {
+    async schema(type: SchemaType = SchemaType.Input): Promise<TSchema> {
         if (type === SchemaType.Input) {
             return {
-                // @ts-expect-error Not Standard JSON Schema
-                display: 'arcgis'
-            };
+                type: 'object',
+                display: 'arcgis',
+                properties: {}
+            } as unknown as TSchema;
         } else {
             const task = new Task();
             const layer = await task.fetchLayer();
@@ -28,7 +28,7 @@ export default class Task extends ETL {
             const dumper = await task.dumper(config, layer);
             const schema = await dumper.schema();
 
-            return schema;
+            return schema as TSchema;
         }
     }
 
@@ -73,7 +73,6 @@ export default class Task extends ETL {
                         ARCGIS_TOKEN: layer.environment.ARCGIS_TOKEN,
                         ARCGIS_EXPIRES: layer.environment.ARCGIS_EXPIRES,
                         ARCGIS_REFERER: layer.environment.ARCGIS_REFERER,
-                        ARCGIS_TIMEZONE: layer.environment.ARCGIS_TIMEZONE,
                     }
                 });
             }
@@ -102,22 +101,7 @@ export default class Task extends ETL {
 
         const dumper = await this.dumper(config, layer);
 
-        if (layer.environment.ARCGIS_TIMEZONE) {
-            dumper.fetch({
-                map: (g: Geometry, f: Feature) => {
-                    for (const prop in g.schema.properties) {
-                        if (typeof g.schema.properties[prop] === 'boolean') continue;
-                        const schema = g.schema.properties[prop] as JSONSchema6;
-                        if (schema.format === 'date-time') {
-                            f.properties[prop] = moment(f.properties[prop]).tz(String(layer.environment.ARCGIS_TIMEZONE)).format('YYYY-MM-DD HH:mm z');
-                        }
-                    }
-                    return f;
-                }
-            });
-        } else {
-            dumper.fetch();
-        }
+        dumper.fetch();
 
         const fc: FeatureCollection = {
             type: 'FeatureCollection',

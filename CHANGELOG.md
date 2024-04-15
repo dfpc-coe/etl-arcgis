@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v5.2.0
+
+- :arrow_up: Use latest ETL Library
+- :rocket: Drop ARCGIS_TIMEZONE in favour of generic config timezone
+
 ### v5.1.3
 
 - :bug: Fix Lints
