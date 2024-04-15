@@ -1,8 +1,7 @@
-import { FeatureCollection, Feature } from 'geojson';
+import { FeatureCollection } from 'geojson';
 import { TSchema } from '@sinclair/typebox';
 import ETL, { TaskLayer, Event, SchemaType, handler as internal, local, env } from '@tak-ps/etl';
 import EsriDump, {
-    Geometry,
     EsriDumpConfigInput,
     EsriDumpConfigApproach
 } from 'esri-dump';

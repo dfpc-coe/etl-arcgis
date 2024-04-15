@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.2.1
+
+:rocket: Remove unused imports
+
 ### v5.2.0
 
 - :arrow_up: Use latest ETL Library
