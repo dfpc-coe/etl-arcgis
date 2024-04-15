@@ -27,12 +27,12 @@ export default class Task extends ETL {
     static async schema(type: SchemaType = SchemaType.Input): Promise<JSONSchema6> {
         if (type === SchemaType.Input) {
             return {
-                // @ts-ignore
+                // @ts-expect-error Not Standard JSON Schema
                 display: 'arcgis'
             };
         } else {
             const task = new Task();
-            const layer = await task.layer();
+            const layer = await task.fetchLayer();
 
             const config: EsriDumpConfigInput = {
                 approach: EsriDumpConfigApproach.ITER,
@@ -101,7 +101,7 @@ export default class Task extends ETL {
     }
 
     async control(): Promise<void> {
-        const layer = await this.layer();
+        const layer = await this.fetchLayer();
 
         if (!layer.environment.ARCGIS_URL) throw new Error('No ArcGIS_URL Provided');
 
@@ -118,8 +118,6 @@ export default class Task extends ETL {
         const dumper = await this.dumper(config, layer);
 
         if (layer.environment.ARCGIS_TIMEZONE) {
-            let dates = new Set();
-
             dumper.fetch({
                 map: (g: Geometry, f: Feature) => {
                     for (const prop in g.schema.properties) {
@@ -144,6 +142,10 @@ export default class Task extends ETL {
         await new Promise<void>((resolve, reject) => {
             dumper.on('feature', (feature) => {
                 feature.id = `layer-${layer.id}-${feature.id}`
+
+                feature.properties = {
+                    metadata: feature.properties
+                };
 
                 if (feature.geometry.type.startsWith('Multi')) {
                     feature.geometry.coordinates.forEach((coords: any, idx: number) => {

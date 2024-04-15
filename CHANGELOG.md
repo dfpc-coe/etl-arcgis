@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v5.0.0
+
+- :arrow_up: Update ETL
+- :rocket: Use `.properties.metadata`
+
 ### v4.1.0
 
 - :arrow_up: Update ETL
