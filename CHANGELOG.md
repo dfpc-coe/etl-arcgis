@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.0.1
+
+- :arrow_up: Move ESLint to devDeps
+
 ### v5.0.0
 
 - :arrow_up: Update ETL

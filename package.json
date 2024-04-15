@@ -16,13 +16,13 @@
         "@types/jsonwebtoken": "^9.0.1",
         "eslint": "^8.31.0",
         "ts-node": "^10.9.1",
-        "typescript": "^5.0.4"
+        "typescript": "^5.0.4",
+        "typescript-eslint": "^7.7.0"
     },
     "dependencies": {
         "@tak-ps/etl": "^4.0.0",
         "@types/geojson": "^7946.0.10",
         "esri-dump": "^5.1.0",
-        "moment-timezone": "^0.5.43",
-        "typescript-eslint": "^7.7.0"
+        "moment-timezone": "^0.5.43"
     }
 }
