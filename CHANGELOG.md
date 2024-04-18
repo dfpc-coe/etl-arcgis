@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.3.0
+
+:arrow_up: Fix date parsing issue in ESRI-Dump library
+
 ### v5.2.1
 
 :rocket: Remove unused imports
