@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.4.0
+
+:arrow_up: Update to latest ETL to push empty features to the server
+
 ### v5.3.0
 
 :arrow_up: Fix date parsing issue in ESRI-Dump library
