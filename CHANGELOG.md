@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.5.0
+
+:arrow_up: Use new PATCH path for Layer
+
 ### v5.4.0
 
 :arrow_up: Update to latest ETL to push empty features to the server

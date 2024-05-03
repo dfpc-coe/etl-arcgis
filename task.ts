@@ -62,7 +62,7 @@ export default class Task extends ETL {
                 }
 
                 console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
-                await this.fetch(`/api/layer/${layer.id}`, 'PATCH', {
+                await this.fetch(`/api/connection/${layer.connection}/layer/${layer.id}`, 'PATCH', {
                     environment: {
                         ARCGIS_PORTAL: layer.environment.ARCGIS_PORTAL,
                         ARCGIS_USERNAME: layer.environment.ARCGIS_USERNAME,
