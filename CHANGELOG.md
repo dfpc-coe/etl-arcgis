@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.6.0
+
+:arrow_up: Update ETL Base for better error responses
+
 ### v5.5.0
 
 :arrow_up: Use new PATCH path for Layer
