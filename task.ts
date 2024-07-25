@@ -1,5 +1,5 @@
 import { FeatureCollection } from 'geojson';
-import { TSchema } from '@sinclair/typebox';
+import { Type, TSchema } from '@sinclair/typebox';
 import ETL, { TaskLayer, Event, SchemaType, handler as internal, local, env } from '@tak-ps/etl';
 import EsriDump, {
     EsriDumpConfigInput,
@@ -18,16 +18,20 @@ export default class Task extends ETL {
             const task = new Task();
             const layer = await task.fetchLayer();
 
-            const config: EsriDumpConfigInput = {
-                approach: EsriDumpConfigApproach.ITER,
-                headers: {},
-                params: {}
-            };
+            if (!layer.environment.ARCGIS_URL) {
+                return Type.Object({});
+            } else {
+                const config: EsriDumpConfigInput = {
+                    approach: EsriDumpConfigApproach.ITER,
+                    headers: {},
+                    params: {}
+                };
 
-            const dumper = await task.dumper(config, layer);
-            const schema = await dumper.schema();
+                const dumper = await task.dumper(config, layer);
+                const schema = await dumper.schema();
 
-            return schema as TSchema;
+                return schema as TSchema;
+            }
         }
     }
 
@@ -148,4 +152,4 @@ await local(new Task(), import.meta.url);
 export async function handler(event: Event = {}) {
     return await internal(new Task(), event);
 }
- 
+

@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.7.0
+
+:rocket: If not configured, return empty schema
+
 ### v5.6.0
 
 :arrow_up: Update ETL Base for better error responses
