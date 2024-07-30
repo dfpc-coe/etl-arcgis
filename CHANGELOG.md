@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.8.0
+
+:rocket: Ignore Features from upstream that do not have geometry
+
 ### v5.7.0
 
 :rocket: If not configured, return empty schema
