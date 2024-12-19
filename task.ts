@@ -52,18 +52,14 @@ export default class Task extends ETL {
     async dumper(config: EsriDumpConfigInput, layer: Static<typeof  TaskLayer>): Promise<EsriDump> {
         const env = await this.env(Input);
 
-        console.error(layer.ephemeral);
-
         if (
             (layer.ephemeral.ARCGIS_TOKEN && layer.ephemeral.ARCGIS_EXPIRES)
             || (env.ARCGIS_USERNAME && env.ARCGIS_PASSWORD)
         ) {
-            delete layer.ephemeral.ARCGIS_REFERER;
-
             if (
                 !layer.ephemeral.ARCGIS_TOKEN
                 || !layer.ephemeral.ARCGIS_REFERER
-                || Number(layer.ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 60 * 60
+                || Number(layer.ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 5 // Token expires in under 5 minutes
             ) {
                 console.log('ok - POST http://localhost:5001/api/esri')
                 const res: object = await this.fetch('/api/esri', {

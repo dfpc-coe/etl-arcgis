@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v6.1.0
+
+- :rocket: Improved auth updates
+
 ### v6.0.0
 
 - :tada: Update to use ephemeral store
