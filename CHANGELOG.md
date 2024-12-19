@@ -10,33 +10,37 @@
 
 ## Version History
 
+### v6.0.0
+
+- :tada: Update to use ephemeral store
+
 ### v5.8.0
 
-:rocket: Ignore Features from upstream that do not have geometry
+- :rocket: Ignore Features from upstream that do not have geometry
 
 ### v5.7.0
 
-:rocket: If not configured, return empty schema
+- :rocket: If not configured, return empty schema
 
 ### v5.6.0
 
-:arrow_up: Update ETL Base for better error responses
+- :arrow_up: Update ETL Base for better error responses
 
 ### v5.5.0
 
-:arrow_up: Use new PATCH path for Layer
+- :arrow_up: Use new PATCH path for Layer
 
 ### v5.4.0
 
-:arrow_up: Update to latest ETL to push empty features to the server
+- :arrow_up: Update to latest ETL to push empty features to the server
 
 ### v5.3.0
 
-:arrow_up: Fix date parsing issue in ESRI-Dump library
+- :arrow_up: Fix date parsing issue in ESRI-Dump library
 
 ### v5.2.1
 
-:rocket: Remove unused imports
+- :rocket: Remove unused imports
 
 ### v5.2.0
 

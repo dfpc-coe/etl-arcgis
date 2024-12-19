@@ -1,12 +1,22 @@
-import { FeatureCollection } from 'geojson';
-import { Type, TSchema } from '@sinclair/typebox';
-import ETL, { TaskLayer, Event, SchemaType, handler as internal, local, env } from '@tak-ps/etl';
+import { Static, Type, TSchema } from '@sinclair/typebox';
+import type { InputFeatureCollection } from '@tak-ps/etl'
+import ETL, { TaskLayer, Event, SchemaType, handler as internal, local } from '@tak-ps/etl';
 import EsriDump, {
     EsriDumpConfigInput,
     EsriDumpConfigApproach
 } from 'esri-dump';
 
+const Input = Type.Object({
+    ARCGIS_URL: Type.String(),
+    ARCGIS_QUERY: Type.Optional(Type.String()),
+    ARCGIS_PORTAL: Type.Optional(Type.String()),
+    ARCGIS_USERNAME: Type.Optional(Type.String()),
+    ARCGIS_PASSWORD: Type.Optional(Type.String()),
+})
+
 export default class Task extends ETL {
+    static name = 'etl-arcgis';
+
     async schema(type: SchemaType = SchemaType.Input): Promise<TSchema> {
         if (type === SchemaType.Input) {
             return {
@@ -17,8 +27,9 @@ export default class Task extends ETL {
         } else {
             const task = new Task();
             const layer = await task.fetchLayer();
+            const env = await this.env(Input);
 
-            if (!layer.environment.ARCGIS_URL) {
+            if (!env.ARCGIS_URL) {
                 return Type.Object({});
             } else {
                 const config: EsriDumpConfigInput = {
@@ -38,59 +49,61 @@ export default class Task extends ETL {
     /**
      * Return a configured instance of ESRI Dump
      */
-    async dumper(config: EsriDumpConfigInput, layer: TaskLayer): Promise<EsriDump> {
+    async dumper(config: EsriDumpConfigInput, layer: Static<typeof  TaskLayer>): Promise<EsriDump> {
+        const env = await this.env(Input);
+
+        console.error(layer.ephemeral);
+
         if (
-            (layer.environment.ARCGIS_TOKEN && layer.environment.ARCGIS_EXPIRES)
-            || (layer.environment.ARCGIS_USERNAME && layer.environment.ARCGIS_PASSWORD)
+            (layer.ephemeral.ARCGIS_TOKEN && layer.ephemeral.ARCGIS_EXPIRES)
+            || (env.ARCGIS_USERNAME && env.ARCGIS_PASSWORD)
         ) {
-            delete layer.environment.ARCGIS_REFERER;
+            delete layer.ephemeral.ARCGIS_REFERER;
 
             if (
-                !layer.environment.ARCGIS_TOKEN
-                || !layer.environment.ARCGIS_REFERER
-                || Number(layer.environment.ARCGIS_EXPIRES) < +new Date()  + 1000 * 60 * 60
+                !layer.ephemeral.ARCGIS_TOKEN
+                || !layer.ephemeral.ARCGIS_REFERER
+                || Number(layer.ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 60 * 60
             ) {
                 console.log('ok - POST http://localhost:5001/api/esri')
-                const res: object = await this.fetch('/api/esri', 'POST', {
-                    url: layer.environment.ARCGIS_PORTAL || layer.environment.ARCGIS_URL,
-                    username: layer.environment.ARCGIS_USERNAME,
-                    password: layer.environment.ARCGIS_PASSWORD
+                const res: object = await this.fetch('/api/esri', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: env.ARCGIS_PORTAL || env.ARCGIS_URL,
+                        username: env.ARCGIS_USERNAME,
+                        password: env.ARCGIS_PASSWORD
+                    })
                 });
 
                 if ('auth' in res && typeof res.auth === 'object') {
-                    res.auth as object;
+                    layer.ephemeral.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
+                    layer.ephemeral.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
+                    layer.ephemeral.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
 
-                    layer.environment.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
-                    layer.environment.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
-                    layer.environment.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
+                    console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
+                    await this.setEphemeral({
+                        ARCGIS_TOKEN: layer.ephemeral.ARCGIS_TOKEN,
+                        ARCGIS_EXPIRES: layer.ephemeral.ARCGIS_EXPIRES,
+                        ARCGIS_REFERER: layer.ephemeral.ARCGIS_REFERER,
+                    });
                 }
-
-                console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
-                await this.fetch(`/api/connection/${layer.connection}/layer/${layer.id}`, 'PATCH', {
-                    environment: {
-                        ARCGIS_PORTAL: layer.environment.ARCGIS_PORTAL,
-                        ARCGIS_USERNAME: layer.environment.ARCGIS_USERNAME,
-                        ARCGIS_PASSWORD: layer.environment.ARCGIS_PASSWORD,
-                        ARCGIS_QUERY: layer.environment.ARCGIS_QUERY,
-                        ARCGIS_URL: layer.environment.ARCGIS_URL,
-                        ARCGIS_TOKEN: layer.environment.ARCGIS_TOKEN,
-                        ARCGIS_EXPIRES: layer.environment.ARCGIS_EXPIRES,
-                        ARCGIS_REFERER: layer.environment.ARCGIS_REFERER,
-                    }
-                });
             }
 
-            config.params.token = String(layer.environment.ARCGIS_TOKEN);
-            config.headers.Referer = String(layer.environment.ARCGIS_REFERER);
+            config.params.token = layer.ephemeral.ARCGIS_TOKEN;
+            config.headers.Referer = layer.ephemeral.ARCGIS_REFERER;
         }
 
-        return new EsriDump(String(layer.environment.ARCGIS_URL), config);
+        return new EsriDump(env.ARCGIS_URL, config);
     }
 
     async control(): Promise<void> {
         const layer = await this.fetchLayer();
+        const env = await this.env(Input);
 
-        if (!layer.environment.ARCGIS_URL) throw new Error('No ArcGIS_URL Provided');
+        if (!env.ARCGIS_URL) throw new Error('No ArcGIS_URL Provided');
 
         const config: EsriDumpConfigInput = {
             approach: EsriDumpConfigApproach.ITER,
@@ -98,15 +111,15 @@ export default class Task extends ETL {
             params: {}
         };
 
-        if (layer.environment.ARCGIS_QUERY) {
-            config.params.where = String(layer.environment.ARCGIS_QUERY);
+        if (env.ARCGIS_QUERY) {
+            config.params.where = env.ARCGIS_QUERY;
         }
 
         const dumper = await this.dumper(config, layer);
 
         dumper.fetch();
 
-        const fc: FeatureCollection = {
+        const fc: Static<typeof InputFeatureCollection> = {
             type: 'FeatureCollection',
             features: []
         };
@@ -147,9 +160,8 @@ export default class Task extends ETL {
     }
 }
 
-env(import.meta.url)
-await local(new Task(), import.meta.url);
+await local(new Task(import.meta.url), import.meta.url);
 export async function handler(event: Event = {}) {
-    return await internal(new Task(), event);
+    return await internal(new Task(import.meta.url), event);
 }
 
