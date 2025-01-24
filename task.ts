@@ -9,7 +9,10 @@ import EsriDump, {
 const Input = Type.Object({
     ARCGIS_URL: Type.String(),
     ARCGIS_QUERY: Type.Optional(Type.String()),
-    ARCGIS_PARAMS: Type.Optional(Type.Record(Type.String(), Type.String())),
+    ARCGIS_PARAMS: Type.Optional(Type.Array(Type.Object({
+        Key: Type.String(),
+        Value: Type.String()
+    }))),
     ARCGIS_PORTAL: Type.Optional(Type.String()),
     ARCGIS_USERNAME: Type.Optional(Type.String()),
     ARCGIS_PASSWORD: Type.Optional(Type.String()),
@@ -112,9 +115,9 @@ export default class Task extends ETL {
             config.params.where = env.ARCGIS_QUERY;
         }
 
-        if (env.ARCGIS_PARAMS) {
-            for (const [key, value] of Object.entries(env.ARCGIS_PARAMS)) {
-                config.params[key] = value;
+        if (env.ARCGIS_PARAMS && env.ARCGIS_PARAMS.length) {
+            for (const param of env.ARCGIS_PARAMS) {
+                config.params[param.Key] = param.Value;
             }
         }
 
