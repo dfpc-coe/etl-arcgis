@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v6.2.0
+
+- :rocket: Add ability to specify arbitrary query params
+
 ### v6.1.0
 
 - :rocket: Improved auth updates
