@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v6.2.1
+
+- :rocket: Add ability to specify arbitrary query params (Array)
+
 ### v6.2.0
 
 - :rocket: Add ability to specify arbitrary query params
