@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v6.3.1
+
+- :bug: Remove webhook type
+
 ### v6.3.0
 
 - :tada: Add Capabilities endpoint
