@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v6.3.0
+
+- :tada: Add Capabilities endpoint
+
 ### v6.2.1
 
 - :rocket: Add ability to specify arbitrary query params (Array)

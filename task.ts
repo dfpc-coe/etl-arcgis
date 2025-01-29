@@ -1,6 +1,6 @@
 import { Static, Type, TSchema } from '@sinclair/typebox';
 import type { InputFeatureCollection } from '@tak-ps/etl'
-import ETL, { TaskLayer, Event, SchemaType, handler as internal, local } from '@tak-ps/etl';
+import ETL, { TaskLayer, Event, SchemaType, handler as internal, local, DataFlowType, InvocationType } from '@tak-ps/etl';
 import EsriDump, {
     EsriDumpConfigInput,
     EsriDumpConfigApproach
@@ -20,33 +20,42 @@ const Input = Type.Object({
 
 export default class Task extends ETL {
     static name = 'etl-arcgis';
+    static flow = [ DataFlowType.Incoming ];
+    static invocation = [ InvocationType.Webhook, InvocationType.Schedule ];
 
-    async schema(type: SchemaType = SchemaType.Input): Promise<TSchema> {
-        if (type === SchemaType.Input) {
-            return {
-                type: 'object',
-                display: 'arcgis',
-                properties: {}
-            } as unknown as TSchema;
-        } else {
-            const task = new Task();
-            const layer = await task.fetchLayer();
-            const env = await this.env(Input);
-
-            if (!env.ARCGIS_URL) {
-                return Type.Object({});
+    async schema(
+        type: SchemaType = SchemaType.Input,
+        flow: DataFlowType = DataFlowType.Incoming
+    ): Promise<TSchema> {
+        if (flow === DataFlowType.Incoming) {
+            if (type === SchemaType.Input) {
+                return {
+                    type: 'object',
+                    display: 'arcgis',
+                    properties: {}
+                } as unknown as TSchema;
             } else {
-                const config: EsriDumpConfigInput = {
-                    approach: EsriDumpConfigApproach.ITER,
-                    headers: {},
-                    params: {}
-                };
+                const task = new Task();
+                const layer = await task.fetchLayer();
+                const env = await this.env(Input);
 
-                const dumper = await task.dumper(config, layer);
-                const schema = await dumper.schema();
+                if (!env.ARCGIS_URL) {
+                    return Type.Object({});
+                } else {
+                    const config: EsriDumpConfigInput = {
+                        approach: EsriDumpConfigApproach.ITER,
+                        headers: {},
+                        params: {}
+                    };
 
-                return schema as TSchema;
+                    const dumper = await task.dumper(config, layer);
+                    const schema = await dumper.schema();
+
+                    return schema as TSchema;
+                }
             }
+        } else {
+            return Type.Object({});
         }
     }
 
