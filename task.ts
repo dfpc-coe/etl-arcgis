@@ -66,13 +66,13 @@ export default class Task extends ETL {
         const env = await this.env(Input);
 
         if (
-            (layer.ephemeral.ARCGIS_TOKEN && layer.ephemeral.ARCGIS_EXPIRES)
+            (layer.incoming.ephemeral.ARCGIS_TOKEN && layer.incoming.ephemeral.ARCGIS_EXPIRES)
             || (env.ARCGIS_USERNAME && env.ARCGIS_PASSWORD)
         ) {
             if (
-                !layer.ephemeral.ARCGIS_TOKEN
-                || !layer.ephemeral.ARCGIS_REFERER
-                || Number(layer.ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 5 // Token expires in under 5 minutes
+                !layer.incoming.ephemeral.ARCGIS_TOKEN
+                || !layer.incoming.ephemeral.ARCGIS_REFERER
+                || Number(layer.incoming.ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 5 // Token expires in under 5 minutes
             ) {
                 console.log('ok - POST http://localhost:5001/api/esri')
                 const res: object = await this.fetch('/api/esri', {
@@ -88,21 +88,21 @@ export default class Task extends ETL {
                 });
 
                 if ('auth' in res && typeof res.auth === 'object') {
-                    layer.ephemeral.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
-                    layer.ephemeral.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
-                    layer.ephemeral.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
+                    layer.incoming.ephemeral.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
+                    layer.incoming.ephemeral.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
+                    layer.incoming.ephemeral.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
 
                     console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
                     await this.setEphemeral({
-                        ARCGIS_TOKEN: layer.ephemeral.ARCGIS_TOKEN,
-                        ARCGIS_EXPIRES: layer.ephemeral.ARCGIS_EXPIRES,
-                        ARCGIS_REFERER: layer.ephemeral.ARCGIS_REFERER,
+                        ARCGIS_TOKEN: layer.incoming.ephemeral.ARCGIS_TOKEN,
+                        ARCGIS_EXPIRES: layer.incoming.ephemeral.ARCGIS_EXPIRES,
+                        ARCGIS_REFERER: layer.incoming.ephemeral.ARCGIS_REFERER,
                     });
                 }
             }
 
-            config.params.token = layer.ephemeral.ARCGIS_TOKEN;
-            config.headers.Referer = layer.ephemeral.ARCGIS_REFERER;
+            config.params.token = layer.incoming.ephemeral.ARCGIS_TOKEN;
+            config.headers.Referer = layer.incoming.ephemeral.ARCGIS_REFERER;
         }
 
         return new EsriDump(env.ARCGIS_URL, config);

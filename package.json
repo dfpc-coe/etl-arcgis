@@ -20,7 +20,7 @@
     },
     "dependencies": {
         "@sinclair/typebox": "^0.34.0",
-        "@tak-ps/etl": "^7.0.0",
+        "@tak-ps/etl": "^8.0.0",
         "esri-dump": "^5.3.0"
     }
 }

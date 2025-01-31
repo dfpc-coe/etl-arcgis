@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.0.0
+
+- :tada: Update to `CloudTAK@v6`
+
 ### v6.3.1
 
 - :bug: Remove webhook type
