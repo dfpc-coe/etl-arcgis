@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.1.0
+
+- :rocket: Prelim sketch of outgoing data
+
 ### v7.0.0
 
 - :tada: Update to `CloudTAK@v6`

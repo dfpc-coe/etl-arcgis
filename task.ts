@@ -1,4 +1,5 @@
 import { Static, Type, TSchema } from '@sinclair/typebox';
+import type Lambda from 'aws-lambda';
 import type { InputFeatureCollection } from '@tak-ps/etl'
 import ETL, { TaskLayer, Event, SchemaType, handler as internal, local, DataFlowType, InvocationType } from '@tak-ps/etl';
 import EsriDump, {
@@ -20,7 +21,7 @@ const Input = Type.Object({
 
 export default class Task extends ETL {
     static name = 'etl-arcgis';
-    static flow = [ DataFlowType.Incoming ];
+    static flow = [ DataFlowType.Incoming, DataFlowType.Outgoing ];
     static invocation = [ InvocationType.Schedule ];
 
     async schema(
@@ -57,6 +58,26 @@ export default class Task extends ETL {
         } else {
             return Type.Object({});
         }
+    }
+
+    async outgoing(event: Lambda.SQSEvent) {
+        const pool: Array<Promise<unknown>> = [];
+
+        for (const record of event.Records) {
+            pool.push(
+                (async (record: Lambda.SQSRecord) => {
+                    try {
+                        const req = JSON.parse(record.body);
+
+                        console.error(req);
+                    } catch (err) {
+                        console.error(err, 'Record:', record.body);
+                    }
+                })(record)
+            )
+        }
+
+        await Promise.allSettled(pool);
     }
 
     /**
