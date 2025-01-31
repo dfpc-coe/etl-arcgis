@@ -65,7 +65,7 @@ export default class Task extends ETL {
         }
     }
 
-    async outgoing(event: Lambda.SQSEvent) {
+    async outgoing(event: Lambda.SQSEvent): Promise<boolean> {
         const pool: Array<Promise<unknown>> = [];
 
         for (const record of event.Records) {
@@ -83,6 +83,8 @@ export default class Task extends ETL {
         }
 
         await Promise.allSettled(pool);
+
+        return true;
     }
 
     /**
