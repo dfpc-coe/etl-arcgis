@@ -38,21 +38,26 @@ export default class Task extends ETL {
             } else {
                 const task = new Task();
                 const layer = await task.fetchLayer();
-                const env = await this.env(Input);
 
-                if (!env.ARCGIS_URL) {
+                if (!layer.incoming) {
                     return Type.Object({});
                 } else {
-                    const config: EsriDumpConfigInput = {
-                        approach: EsriDumpConfigApproach.ITER,
-                        headers: {},
-                        params: {}
-                    };
+                    const env = await this.env(Input);
 
-                    const dumper = await task.dumper(config, layer);
-                    const schema = await dumper.schema();
+                    if (!env.ARCGIS_URL) {
+                        return Type.Object({});
+                    } else {
+                        const config: EsriDumpConfigInput = {
+                            approach: EsriDumpConfigApproach.ITER,
+                            headers: {},
+                            params: {}
+                        };
 
-                    return schema as TSchema;
+                        const dumper = await task.dumper(config, layer);
+                        const schema = await dumper.schema();
+
+                        return schema as TSchema;
+                    }
                 }
             }
         } else {

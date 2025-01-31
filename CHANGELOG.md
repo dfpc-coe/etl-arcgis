@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.2.0
+
+- :rocket: Provide empty incoming-output schema if incoming is not yet configured
+
 ### v7.1.0
 
 - :rocket: Prelim sketch of outgoing data
