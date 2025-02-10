@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.3.1
+
+- :bug: Fix Syntax
+
 ### v7.3.0
 
 - :rocket: Continue to sketch out outgoing behavior

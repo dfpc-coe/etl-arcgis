@@ -29,34 +29,33 @@ export default class Task extends ETL {
         flow: DataFlowType = DataFlowType.Incoming
     ): Promise<TSchema> {
         if (flow === DataFlowType.Incoming && type === SchemaType.Input) {
-                return {
-                    type: 'object',
-                    display: 'arcgis',
-                    properties: {}
-                } as unknown as TSchema;
+            return {
+                type: 'object',
+                display: 'arcgis',
+                properties: {}
+            } as unknown as TSchema;
         } else if (flow === DataFlowType.Incoming && type === SchemaType.Output) {
-                const task = new Task();
-                const layer = await task.fetchLayer();
+            const task = new Task();
+            const layer = await task.fetchLayer();
 
-                if (!layer.incoming) {
+            if (!layer.incoming) {
+                return Type.Object({});
+            } else {
+                const env = await this.env(Input);
+
+                if (!env.ARCGIS_URL) {
                     return Type.Object({});
                 } else {
-                    const env = await this.env(Input);
+                    const config: EsriDumpConfigInput = {
+                        approach: EsriDumpConfigApproach.ITER,
+                        headers: {},
+                        params: {}
+                    };
 
-                    if (!env.ARCGIS_URL) {
-                        return Type.Object({});
-                    } else {
-                        const config: EsriDumpConfigInput = {
-                            approach: EsriDumpConfigApproach.ITER,
-                            headers: {},
-                            params: {}
-                        };
+                    const dumper = await task.dumper(config, layer);
+                    const schema = await dumper.schema();
 
-                        const dumper = await task.dumper(config, layer);
-                        const schema = await dumper.schema();
-
-                        return schema as TSchema;
-                    }
+                    return schema as TSchema;
                 }
             }
         } else if (flow === DataFlowType.Outgoing && type === SchemaType.Input) {
