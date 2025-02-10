@@ -28,14 +28,13 @@ export default class Task extends ETL {
         type: SchemaType = SchemaType.Input,
         flow: DataFlowType = DataFlowType.Incoming
     ): Promise<TSchema> {
-        if (flow === DataFlowType.Incoming) {
-            if (type === SchemaType.Input) {
+        if (flow === DataFlowType.Incoming && type === SchemaType.Input) {
                 return {
                     type: 'object',
                     display: 'arcgis',
                     properties: {}
                 } as unknown as TSchema;
-            } else {
+        } else if (flow === DataFlowType.Incoming && type === SchemaType.Output) {
                 const task = new Task();
                 const layer = await task.fetchLayer();
 
@@ -60,7 +59,17 @@ export default class Task extends ETL {
                     }
                 }
             }
-        } else {
+        } else if (flow === DataFlowType.Outgoing && type === SchemaType.Input) {
+            return Type.Object({
+                portal: Type.String(),
+                layer: Type.String(),
+                metadata: Type.Array(Type.Object({
+                    type: Type.String(),
+                    column: Type.String(),
+                    mapping: Type.String(),
+                }))
+            });
+        } else if (flow === DataFlowType.Outgoing && type === SchemaType.Output) {
             return Type.Object({});
         }
     }

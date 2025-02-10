@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.3.0
+
+- :rocket: Continue to sketch out outgoing behavior
+
 ### v7.2.1
 
 - :bug: Fix build Error
