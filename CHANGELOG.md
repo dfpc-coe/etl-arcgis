@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.4.0
+
+- :rocket: Update Core Deps
+
 ### v7.3.2
 
 - :arrow_up: Update Core Deps

@@ -7,7 +7,7 @@ import EsriDump, {
     EsriDumpConfigApproach
 } from 'esri-dump';
 
-const Input = Type.Object({
+const IncomingInput = Type.Object({
     ARCGIS_URL: Type.String(),
     ARCGIS_QUERY: Type.Optional(Type.String()),
     ARCGIS_PARAMS: Type.Optional(Type.Array(Type.Object({
@@ -18,6 +18,18 @@ const Input = Type.Object({
     ARCGIS_USERNAME: Type.Optional(Type.String()),
     ARCGIS_PASSWORD: Type.Optional(Type.String()),
 })
+
+const OutgoingInput = Type.Object({
+    ARCGIS_URL: Type.String(),
+    ARCGIS_PORTAL: Type.String(),
+    ARCGIS_USERNAME: Type.String(),
+    ARCGIS_PASSWORD: Type.String(),
+    ARCGIS_SCHEMA: Type.Array(Type.Object({
+        Type: Type.String(),
+        Column: Type.String(),
+        Mapping: Type.String(),
+    }))
+});
 
 export default class Task extends ETL {
     static name = 'etl-arcgis';
@@ -41,7 +53,7 @@ export default class Task extends ETL {
             if (!layer.incoming) {
                 return Type.Object({});
             } else {
-                const env = await this.env(Input);
+                const env = await this.env(IncomingInput);
 
                 if (!env.ARCGIS_URL) {
                     return Type.Object({});
@@ -59,21 +71,15 @@ export default class Task extends ETL {
                 }
             }
         } else if (flow === DataFlowType.Outgoing && type === SchemaType.Input) {
-            return Type.Object({
-                portal: Type.String(),
-                layer: Type.String(),
-                metadata: Type.Array(Type.Object({
-                    type: Type.String(),
-                    column: Type.String(),
-                    mapping: Type.String(),
-                }))
-            });
+            return OutgoingInput;
         } else if (flow === DataFlowType.Outgoing && type === SchemaType.Output) {
             return Type.Object({});
         }
     }
 
     async outgoing(event: Lambda.SQSEvent): Promise<boolean> {
+        await this.env(OutgoingInput, DataFlowType.Outgoing);
+
         const pool: Array<Promise<unknown>> = [];
 
         for (const record of event.Records) {
@@ -99,7 +105,7 @@ export default class Task extends ETL {
      * Return a configured instance of ESRI Dump
      */
     async dumper(config: EsriDumpConfigInput, layer: Static<typeof  TaskLayer>): Promise<EsriDump> {
-        const env = await this.env(Input);
+        const env = await this.env(IncomingInput);
 
         if (
             (layer.incoming.ephemeral.ARCGIS_TOKEN && layer.incoming.ephemeral.ARCGIS_EXPIRES)
@@ -146,7 +152,7 @@ export default class Task extends ETL {
 
     async control(): Promise<void> {
         const layer = await this.fetchLayer();
-        const env = await this.env(Input);
+        const env = await this.env(IncomingInput);
 
         if (!env.ARCGIS_URL) throw new Error('No ArcGIS_URL Provided');
 
