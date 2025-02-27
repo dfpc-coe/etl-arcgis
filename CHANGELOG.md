@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.5.0
+
+- :rocket: Continue to sketch outgoing config
+
 ### v7.4.0
 
 - :rocket: Update Core Deps
