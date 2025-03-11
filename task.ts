@@ -20,10 +20,12 @@ const IncomingInput = Type.Object({
 })
 
 const OutgoingInput = Type.Object({
-    ARCGIS_URL: Type.String(),
     ARCGIS_PORTAL: Type.String(),
     ARCGIS_USERNAME: Type.String(),
     ARCGIS_PASSWORD: Type.String(),
+    ARCGIS_POINTS_URL: Type.Optional(Type.String()),
+    ARCGIS_LINES_URL: Type.Optional(Type.String()),
+    ARCGIS_POLYS_URL: Type.Optional(Type.String()),
     ARCGIS_SCHEMA: Type.Array(Type.Object({
         Type: Type.String(),
         Column: Type.String(),
@@ -41,11 +43,7 @@ export default class Task extends ETL {
         flow: DataFlowType = DataFlowType.Incoming
     ): Promise<TSchema> {
         if (flow === DataFlowType.Incoming && type === SchemaType.Input) {
-            return {
-                type: 'object',
-                display: 'arcgis',
-                properties: {}
-            } as unknown as TSchema;
+            return IncomingInput;
         } else if (flow === DataFlowType.Incoming && type === SchemaType.Output) {
             const task = new Task();
             const layer = await task.fetchLayer();

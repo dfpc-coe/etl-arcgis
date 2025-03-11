@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.6.0
+
+- :rocket: Continue to sketch outgoing config
+
 ### v7.5.0
 
 - :rocket: Continue to sketch outgoing config
