@@ -30,11 +30,6 @@ const OutgoingInput = Type.Object({
     ARCGIS_POINTS_URL: Type.Optional(Type.String()),
     ARCGIS_LINES_URL: Type.Optional(Type.String()),
     ARCGIS_POLYS_URL: Type.Optional(Type.String()),
-    ARCGIS_SCHEMA: Type.Array(Type.Object({
-        Type: Type.String(),
-        Column: Type.String(),
-        Mapping: Type.String(),
-    }))
 });
 
 export default class Task extends ETL {

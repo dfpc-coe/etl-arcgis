@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.8.0
+
+- :rocket: Post features to ESRI Layer
+
 ### v7.7.0
 
 - :rocket: Post features to ESRI Layer
