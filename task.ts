@@ -157,7 +157,7 @@ export default class Task extends ETL {
                         let geometry: Geometry;
                         if (feat.geometry.type === 'Point') {
                             const geom = geojsonToArcGIS(feat.geometry) as Point;
-                            if (!geom.x || !geom.y) throw new Error('Incompatible Geometry');
+                            if (geom.x === undefined || geom.y === undefined) throw new Error('Incompatible Geometry');
 
                             const proj = proj4('EPSG:4326', 'EPSG:3857', [ geom.x, geom.y ]);
 

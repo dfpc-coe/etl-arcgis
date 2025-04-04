@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.8.1
+
+- :bug: Downstream users should filter Null Island if they so desire
+
 ### v7.8.0
 
 - :rocket: Post features to ESRI Layer
