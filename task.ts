@@ -1,6 +1,10 @@
+import proj4 from 'proj4';
+import type { Geometry, Point, Polyline, Polygon } from 'arcgis-rest-api';
+import { geojsonToArcGIS } from '@terraformer/arcgis';
 import { Static, Type, TSchema } from '@sinclair/typebox';
 import type Lambda from 'aws-lambda';
-import type { InputFeatureCollection } from '@tak-ps/etl'
+import { Feature } from '@tak-ps/node-cot';
+import { InputFeatureCollection } from '@tak-ps/etl'
 import ETL, { TaskLayer, Event, SchemaType, handler as internal, local, DataFlowType, InvocationType } from '@tak-ps/etl';
 import EsriDump, {
     EsriDumpConfigInput,
@@ -76,17 +80,196 @@ export default class Task extends ETL {
     }
 
     async outgoing(event: Lambda.SQSEvent): Promise<boolean> {
-        await this.env(OutgoingInput, DataFlowType.Outgoing);
+        const layer = await this.fetchLayer();
+        const env = await this.env(OutgoingInput, DataFlowType.Outgoing);
 
         const pool: Array<Promise<unknown>> = [];
+
+        if (
+            !layer.outgoing.ephemeral.ARCGIS_TOKEN
+            || !layer.outgoing.ephemeral.ARCGIS_REFERER
+            || Number(layer.outgoing.ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 5 // Token expires in under 5 minutes
+        ) {
+            console.log('ok - POST /api/esri')
+            const res: object = await this.fetch('/api/esri', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    url: env.ARCGIS_PORTAL,
+                    username: env.ARCGIS_USERNAME,
+                    password: env.ARCGIS_PASSWORD
+                })
+            });
+
+            if ('auth' in res && typeof res.auth === 'object') {
+                layer.outgoing.ephemeral.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
+                layer.outgoing.ephemeral.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
+                layer.outgoing.ephemeral.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
+
+                console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
+                await this.setEphemeral({
+                    ARCGIS_TOKEN: layer.outgoing.ephemeral.ARCGIS_TOKEN,
+                    ARCGIS_EXPIRES: layer.outgoing.ephemeral.ARCGIS_EXPIRES,
+                    ARCGIS_REFERER: layer.outgoing.ephemeral.ARCGIS_REFERER,
+                }, DataFlowType.Outgoing);
+            }
+        }
 
         for (const record of event.Records) {
             pool.push(
                 (async (record: Lambda.SQSRecord) => {
                     try {
-                        const req = JSON.parse(record.body);
+                        const feat = (JSON.parse(record.body) as {
+                            xml: string,
+                            geojson: Static<typeof Feature.Feature>
+                        }).geojson;
 
-                        console.error(req);
+                        let esriLayerURL;
+                        if (env.ARCGIS_POINTS_URL && feat.geometry.type === 'Point') {
+                            esriLayerURL = env.ARCGIS_POINTS_URL;
+                        } else if (env.ARCGIS_LINES_URL && feat.geometry.type === 'LineString') {
+                            esriLayerURL = env.ARCGIS_LINES_URL;
+                        } else if (env.ARCGIS_POLYS_URL && feat.geometry.type === 'Polygon') {
+                            esriLayerURL = env.ARCGIS_POLYS_URL;
+                        } else {
+                            console.error(`ok - skipping ${feat.properties.callsign} due to geometry: ${feat.geometry.type}`);
+                            return false;
+                        }
+
+                        const res_query = await fetch(esriLayerURL + '/query', {
+                            method: 'POST',
+                            headers: {
+                                'Referer': layer.outgoing.ephemeral.ARCGIS_REFERER,
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Esri-Authorization': `Bearer ${layer.outgoing.ephemeral.ARCGIS_TOKEN}`
+                            },
+                            body: new URLSearchParams({
+                                'f': 'json',
+                                'where': `cotuid='${feat.id}'`,
+                                    'outFields': '*'
+                            })
+                        });
+
+                        if (!res_query.ok) throw new Error(await res_query.text());
+                        const query = await res_query.json();
+
+                        if (process.env.DEBUG) console.error('/query', feat.properties.callsign, 'Res:', JSON.stringify(query));
+
+                        if (query.error) throw new Error(query.error.message);
+
+                        let geometry: Geometry;
+                        if (feat.geometry.type === 'Point') {
+                            const geom = geojsonToArcGIS(feat.geometry) as Point;
+                            if (!geom.x || !geom.y) throw new Error('Incompatible Geometry');
+
+                            const proj = proj4('EPSG:4326', 'EPSG:3857', [ geom.x, geom.y ]);
+
+                            geom.x = proj[0];
+                            geom.y = proj[1];
+
+                            geometry = geom;
+                        } else if (feat.geometry.type === 'LineString') {
+                            const geom = geojsonToArcGIS(feat.geometry) as Polyline;
+
+                            geom.paths = geom.paths.map((paths) => {
+                                return paths.map((p) => {
+                                    return proj4('EPSG:4326', 'EPSG:3857', p);
+                                })
+                            })
+
+                            geometry = geom;
+                        } else if (feat.geometry.type === 'Polygon') {
+                            const geom = geojsonToArcGIS(feat.geometry) as Polygon;
+
+                            geom.rings = geom.rings.map((ring) => {
+                                return ring.map((r) => {
+                                    return proj4('EPSG:4326', 'EPSG:3857', r);
+                                })
+                            })
+
+                            geometry = geom;
+                        }
+
+                        geometry.spatialReference = {
+                            wkid: 102100,
+                            latestWkid: 3857
+                        }
+
+                        if (!query.features.length) {
+                            const res = await fetch(new URL(esriLayerURL + '/addFeatures'), {
+                                method: 'POST',
+                                headers: {
+                                    'Referer': layer.outgoing.ephemeral.ARCGIS_REFERER,
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'X-Esri-Authorization': `Bearer ${layer.outgoing.ephemeral.ARCGIS_TOKEN}`
+                                },
+                                body: new URLSearchParams({
+                                    'f': 'json',
+                                    'features': JSON.stringify([{
+                                        attributes: {
+                                            cotuid: feat.id,
+                                            callsign: feat.properties.callsign || 'Unknown',
+                                            remarks: feat.properties.remarks || '',
+                                            type: feat.properties.type,
+                                            how: feat.properties.how,
+                                            time: feat.properties.time,
+                                            start: feat.properties.start,
+                                            stale: feat.properties.stale
+                                        },
+                                        geometry
+                                    }])
+                                })
+                            });
+
+                            if (!res.ok) throw new Error(await res.text());
+
+                            const body = await res.json();
+
+                            if (process.env.DEBUG) console.error('/addFeatures', feat.properties.callsign, 'Res:', JSON.stringify(body));
+
+                            if (body.addResults.length && body.addResults[0].error) throw new Error(JSON.stringify(body.addResults[0].error));
+
+                            return true;
+                        } else {
+                            const oid = query.features[0].attributes.objectid;
+
+                            const res = await fetch(new URL(esriLayerURL + '/updateFeatures'), {
+                                method: 'POST',
+                                headers: {
+                                    'Referer': layer.outgoing.ephemeral.ARCGIS_REFERER,
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'X-Esri-Authorization': `Bearer ${layer.outgoing.ephemeral.ARCGIS_TOKEN}`
+                                },
+                                body: new URLSearchParams({
+                                    'f': 'json',
+                                    'features': JSON.stringify([{
+                                        attributes: {
+                                            objectid: oid,
+                                            cotuid: feat.id,
+                                            callsign: feat.properties.callsign,
+                                            type: feat.properties.type,
+                                            how: feat.properties.how,
+                                            time: feat.properties.time,
+                                            start: feat.properties.start,
+                                            stale: feat.properties.stale
+                                        },
+                                        geometry
+                                    }])
+                                })
+                            });
+
+                            if (!res.ok) throw new Error(await res.text());
+
+                            const body = await res.json();
+
+                            if (process.env.DEBUG) console.error('/updateFeatures', feat.properties.callsign, 'Res:', JSON.stringify(body));
+
+                            if (body.updateResults.length && body.updateResults[0].error) throw new Error(JSON.stringify(body.updateResults[0].error));
+
+                            return true;
+                        }
                     } catch (err) {
                         console.error(err, 'Record:', record.body);
                     }
