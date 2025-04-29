@@ -74,16 +74,20 @@ export default class Task extends ETL {
         }
     }
 
-    async outgoing(event: Lambda.SQSEvent): Promise<boolean> {
-        const layer = await this.fetchLayer();
-        const env = await this.env(OutgoingInput, DataFlowType.Outgoing);
+    async auth(
+        layer: Static<typeof TaskLayer>,
+        flow: DataFlowType,
+        env: {
+            url: string,
+            username: string
+            password: string
+        }
 
-        const pool: Array<Promise<unknown>> = [];
-
+    ): Promise<void> {
         if (
-            !layer.outgoing.ephemeral.ARCGIS_TOKEN
-            || !layer.outgoing.ephemeral.ARCGIS_REFERER
-            || Number(layer.outgoing.ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 5 // Token expires in under 5 minutes
+            !layer[flow].ephemeral.ARCGIS_TOKEN
+            || !layer[flow].ephemeral.ARCGIS_REFERER
+            || Number(layer[flow].ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 5 // Token expires in under 5 minutes
         ) {
             console.log('ok - POST /api/esri')
             const res: object = await this.fetch('/api/esri', {
@@ -92,25 +96,56 @@ export default class Task extends ETL {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    url: env.ARCGIS_PORTAL,
-                    username: env.ARCGIS_USERNAME,
-                    password: env.ARCGIS_PASSWORD
+                    url: env.url,
+                    username: env.username,
+                    password: env.password
                 })
             });
 
             if ('auth' in res && typeof res.auth === 'object') {
-                layer.outgoing.ephemeral.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
-                layer.outgoing.ephemeral.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
-                layer.outgoing.ephemeral.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
+                layer[flow].ephemeral.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
+                layer[flow].ephemeral.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
+                layer[flow].ephemeral.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
 
                 console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
                 await this.setEphemeral({
-                    ARCGIS_TOKEN: layer.outgoing.ephemeral.ARCGIS_TOKEN,
-                    ARCGIS_EXPIRES: layer.outgoing.ephemeral.ARCGIS_EXPIRES,
-                    ARCGIS_REFERER: layer.outgoing.ephemeral.ARCGIS_REFERER,
-                }, DataFlowType.Outgoing);
+                    ARCGIS_TOKEN: layer[flow].ephemeral.ARCGIS_TOKEN,
+                    ARCGIS_EXPIRES: layer[flow].ephemeral.ARCGIS_EXPIRES,
+                    ARCGIS_REFERER: layer[flow].ephemeral.ARCGIS_REFERER,
+                }, flow);
             }
         }
+    }
+
+    async update(flow: DataFlowType): Promise<void> {
+        const layer = await this.fetchLayer();
+
+        if (flow === DataFlowType.Outgoing) {
+            const env = await this.env(OutgoingInput, flow);
+
+            await this.auth(layer, flow, {
+                url: env.ARCGIS_PORTAL,
+                username: env.ARCGIS_USERNAME,
+                password: env.ARCGIS_PASSWORD
+            });
+
+            console.log('update:', flow);
+        } else {
+            return;
+        }
+    }
+
+    async outgoing(event: Lambda.SQSEvent): Promise<boolean> {
+        const layer = await this.fetchLayer();
+        const env = await this.env(OutgoingInput, DataFlowType.Outgoing);
+
+        const pool: Array<Promise<unknown>> = [];
+
+        await this.auth(layer, DataFlowType.Outgoing, {
+            url: env.ARCGIS_PORTAL,
+            username: env.ARCGIS_USERNAME,
+            password: env.ARCGIS_PASSWORD
+        });
 
         for (const record of event.Records) {
             pool.push(
@@ -280,44 +315,21 @@ export default class Task extends ETL {
     /**
      * Return a configured instance of ESRI Dump
      */
-    async dumper(config: EsriDumpConfigInput, layer: Static<typeof  TaskLayer>): Promise<EsriDump> {
+    async dumper(
+        config: EsriDumpConfigInput,
+        layer: Static<typeof  TaskLayer>
+    ): Promise<EsriDump> {
         const env = await this.env(IncomingInput);
 
         if (
             (layer.incoming.ephemeral.ARCGIS_TOKEN && layer.incoming.ephemeral.ARCGIS_EXPIRES)
             || (env.ARCGIS_USERNAME && env.ARCGIS_PASSWORD)
         ) {
-            if (
-                !layer.incoming.ephemeral.ARCGIS_TOKEN
-                || !layer.incoming.ephemeral.ARCGIS_REFERER
-                || Number(layer.incoming.ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 5 // Token expires in under 5 minutes
-            ) {
-                console.log('ok - POST http://localhost:5001/api/esri')
-                const res: object = await this.fetch('/api/esri', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        url: env.ARCGIS_PORTAL || env.ARCGIS_URL,
-                        username: env.ARCGIS_USERNAME,
-                        password: env.ARCGIS_PASSWORD
-                    })
-                });
-
-                if ('auth' in res && typeof res.auth === 'object') {
-                    layer.incoming.ephemeral.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
-                    layer.incoming.ephemeral.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
-                    layer.incoming.ephemeral.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
-
-                    console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
-                    await this.setEphemeral({
-                        ARCGIS_TOKEN: layer.incoming.ephemeral.ARCGIS_TOKEN,
-                        ARCGIS_EXPIRES: layer.incoming.ephemeral.ARCGIS_EXPIRES,
-                        ARCGIS_REFERER: layer.incoming.ephemeral.ARCGIS_REFERER,
-                    });
-                }
-            }
+            this.auth(layer, DataFlowType.Incoming, {
+                url: env.ARCGIS_PORTAL || env.ARCGIS_URL,
+                username: env.ARCGIS_USERNAME,
+                password: env.ARCGIS_PASSWORD
+            })
 
             config.params.token = layer.incoming.ephemeral.ARCGIS_TOKEN;
             config.headers.Referer = layer.incoming.ephemeral.ARCGIS_REFERER;

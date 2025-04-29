@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.9.0
+
+- :rocket: Migrate to shared auth strategy
+
 ### v7.8.2
 
 - :bug: Support Env Changes
