@@ -2,7 +2,7 @@
     "name": "coe-arcgis",
     "type": "module",
     "prviate": true,
-    "version": "7.8.2",
+    "version": "7.9.0",
     "description": "",
     "main": "task.ts",
     "scripts": {
