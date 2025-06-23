@@ -30,6 +30,7 @@ const OutgoingInput = Type.Object({
     ARCGIS_POINTS_URL: Type.Optional(Type.String()),
     ARCGIS_LINES_URL: Type.Optional(Type.String()),
     ARCGIS_POLYS_URL: Type.Optional(Type.String()),
+    PRESERVE_HISTORY: Type.Optional(Type.Boolean()),
 });
 
 export default class Task extends ETL {
@@ -138,6 +139,8 @@ export default class Task extends ETL {
     async outgoing(event: Lambda.SQSEvent): Promise<boolean> {
         const layer = await this.fetchLayer();
         const env = await this.env(OutgoingInput, DataFlowType.Outgoing);
+        const preserveHistory = env.PRESERVE_HISTORY === true;
+
 
         const pool: Array<Promise<unknown>> = [];
 
@@ -227,7 +230,7 @@ export default class Task extends ETL {
                             latestWkid: 3857
                         }
 
-                        if (!query.features.length) {
+                        if (!query.features.length || preserveHistory) {
                             const res = await fetch(new URL(esriLayerURL + '/addFeatures'), {
                                 method: 'POST',
                                 headers: {
@@ -300,6 +303,7 @@ export default class Task extends ETL {
 
                             return true;
                         }
+
                     } catch (err) {
                         console.error(err, 'Record:', record.body);
                     }
