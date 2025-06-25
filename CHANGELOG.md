@@ -10,7 +10,7 @@
 
 ## Version History
 
-### v7.8.0
+### v7.10.0
 
 - :tada: Add continuous insert mode
 
