@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.8.0
+
+- :tada: Add continuous insert mode
+
 ### v7.9.0
 
 - :rocket: Migrate to shared auth strategy
