@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.11.0
+
+- :tada: Migrate to latest ETL Base
+
 ### v7.10.0
 
 - :tada: Add continuous insert mode
