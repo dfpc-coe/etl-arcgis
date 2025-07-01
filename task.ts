@@ -10,6 +10,10 @@ import EsriDump, {
     EsriDumpConfigInput,
     EsriDumpConfigApproach
 } from 'esri-dump';
+import * as turf from '@turf/turf';
+
+
+
 
 const IncomingInput = Type.Object({
     ARCGIS_URL: Type.String(),
@@ -35,6 +39,33 @@ const OutgoingInput = Type.Object({
         description: 'If true, will not update existing features, but create new ones instead.'
     }),
 });
+
+const MIN_DISTANCE_FEET = 528;
+const MIN_DISTANCE_METERS = MIN_DISTANCE_FEET * 0.3048;
+
+function filterFeaturesByDistance(features: Feature[]): Feature[] {
+    const filtered: Feature[] = [];
+    let lastCoord: [number, number] | null = null;
+
+    for (const feature of features) {
+        const coord = turf.getCoord(feature);
+
+        if (!lastCoord) {
+        filtered.push(feature);
+        lastCoord = coord;
+        continue;
+        }
+
+        const distance = turf.distance(turf.point(lastCoord), turf.point(coord), { units: 'meters' });
+
+        if (distance >= MIN_DISTANCE_METERS) {
+        filtered.push(feature);
+        lastCoord = coord;
+        }
+    }
+
+    return filtered;
+}
 
 export default class Task extends ETL {
     static name = 'etl-arcgis';
@@ -139,6 +170,8 @@ export default class Task extends ETL {
         }
     }
 
+    
+
     async outgoing(event: Lambda.SQSEvent): Promise<boolean> {
         const layer = await this.fetchLayer();
         const env = await this.env(OutgoingInput, DataFlowType.Outgoing);
@@ -150,8 +183,22 @@ export default class Task extends ETL {
             username: env.ARCGIS_USERNAME,
             password: env.ARCGIS_PASSWORD
         });
+//
+        const rawFeatures = event.Records.map(r =>
+            (JSON.parse(r.body) as { geojson: Static<typeof Feature.Feature> }).geojson
+            );
+        const filteredIDs = env.PRESERVE_HISTORY
+            ? new Set(filterFeaturesByDistance(rawFeatures).map(f => f.id))
+            : null;
+        const recordsToProcess = env.PRESERVE_HISTORY
+            ? event.Records.filter(r => {
+                const feat = (JSON.parse(r.body) as { geojson: Static<typeof Feature.Feature> }).geojson;
+                return filteredIDs!.has(feat.id);
+                })
+            : event.Records;
 
-        for (const record of event.Records) {
+
+        for (const record of recordsToProcess) {
             pool.push(
                 (async (record: Lambda.SQSRecord) => {
                     try {
@@ -211,6 +258,10 @@ export default class Task extends ETL {
                         }
 
                         if (env.PRESERVE_HISTORY) {
+                            if (!filteredIDs!.has(feat.id)) {
+                                console.debug(`✂️ skipping ${feat.id} (too close)`);
+                                return true;       
+                            }
                             const res = await fetch(new URL(esriLayerURL + '/addFeatures'), {
                                 method: 'POST',
                                 headers: {
