@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.12.0
+
+- :tada: Strongly type ephemeral store
+
 ### v7.11.1
 
 - :bug: Fix issue where `remarks` field was not updated

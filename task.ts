@@ -36,6 +36,12 @@ const OutgoingInput = Type.Object({
     }),
 });
 
+const EphemeralStore = Type.Object({
+    ARCGIS_TOKEN: Type.Optional(Type.String()),
+    ARCGIS_EXPIRES: Type.Optional(Type.String()),
+    ARCGIS_REFERER: Type.Optional(Type.String()),
+});
+
 export default class Task extends ETL {
     static name = 'etl-arcgis';
     static flow = [ DataFlowType.Incoming, DataFlowType.Outgoing ];
@@ -88,10 +94,12 @@ export default class Task extends ETL {
         }
 
     ): Promise<void> {
+        const ephem = await this.ephemeral(EphemeralStore, flow);
+
         if (
-            !layer[flow].ephemeral.ARCGIS_TOKEN
-            || !layer[flow].ephemeral.ARCGIS_REFERER
-            || Number(layer[flow].ephemeral.ARCGIS_EXPIRES) < +new Date()  + 1000 * 5 // Token expires in under 5 minutes
+            !ephem.ARCGIS_TOKEN
+            || !ephem.ARCGIS_REFERER
+            || Number(ephem.ARCGIS_EXPIRES) < +new Date()  + 1000 * 5 // Token expires in under 5 minutes
         ) {
             console.log('ok - POST /api/esri')
             const res: object = await this.fetch('/api/esri', {
@@ -107,15 +115,15 @@ export default class Task extends ETL {
             });
 
             if ('auth' in res && typeof res.auth === 'object') {
-                layer[flow].ephemeral.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
-                layer[flow].ephemeral.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
-                layer[flow].ephemeral.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
+                ephem.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
+                ephem.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
+                ephem.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
 
                 console.log(`ok - PATCH http://localhost:5001/api/layer/${layer.id}`)
                 await this.setEphemeral({
-                    ARCGIS_TOKEN: layer[flow].ephemeral.ARCGIS_TOKEN,
-                    ARCGIS_EXPIRES: layer[flow].ephemeral.ARCGIS_EXPIRES,
-                    ARCGIS_REFERER: layer[flow].ephemeral.ARCGIS_REFERER,
+                    ARCGIS_TOKEN: ephem.ARCGIS_TOKEN,
+                    ARCGIS_EXPIRES: ephem.ARCGIS_EXPIRES,
+                    ARCGIS_REFERER: ephem.ARCGIS_REFERER,
                 }, flow);
             }
         }
@@ -141,6 +149,7 @@ export default class Task extends ETL {
 
     async outgoing(event: Lambda.SQSEvent): Promise<boolean> {
         const layer = await this.fetchLayer();
+        const ephem = await this.ephemeral(EphemeralStore, DataFlowType.Outgoing);
         const env = await this.env(OutgoingInput, DataFlowType.Outgoing);
 
         const pool: Array<Promise<unknown>> = [];
@@ -214,9 +223,9 @@ export default class Task extends ETL {
                             const res = await fetch(new URL(esriLayerURL + '/addFeatures'), {
                                 method: 'POST',
                                 headers: {
-                                    'Referer': layer.outgoing.ephemeral.ARCGIS_REFERER,
+                                    'Referer': ephem.ARCGIS_REFERER,
                                     'Content-Type': 'application/x-www-form-urlencoded',
-                                    'X-Esri-Authorization': `Bearer ${layer.outgoing.ephemeral.ARCGIS_TOKEN}`
+                                    'X-Esri-Authorization': `Bearer ${ephem.ARCGIS_TOKEN}`
                                 },
                                 body: new URLSearchParams({
                                     'f': 'json',
@@ -249,9 +258,9 @@ export default class Task extends ETL {
                             const res_query = await fetch(esriLayerURL + '/query', {
                                 method: 'POST',
                                 headers: {
-                                    'Referer': layer.outgoing.ephemeral.ARCGIS_REFERER,
+                                    'Referer': ephem.ARCGIS_REFERER,
                                     'Content-Type': 'application/x-www-form-urlencoded',
-                                    'X-Esri-Authorization': `Bearer ${layer.outgoing.ephemeral.ARCGIS_TOKEN}`
+                                    'X-Esri-Authorization': `Bearer ${ephem.ARCGIS_TOKEN}`
                                 },
                                 body: new URLSearchParams({
                                     'f': 'json',
@@ -271,9 +280,9 @@ export default class Task extends ETL {
                                 const res = await fetch(new URL(esriLayerURL + '/addFeatures'), {
                                     method: 'POST',
                                     headers: {
-                                        'Referer': layer.outgoing.ephemeral.ARCGIS_REFERER,
+                                        'Referer': ephem.ARCGIS_REFERER,
                                         'Content-Type': 'application/x-www-form-urlencoded',
-                                        'X-Esri-Authorization': `Bearer ${layer.outgoing.ephemeral.ARCGIS_TOKEN}`
+                                        'X-Esri-Authorization': `Bearer ${ephem.ARCGIS_TOKEN}`
                                     },
                                     body: new URLSearchParams({
                                         'f': 'json',
@@ -308,9 +317,9 @@ export default class Task extends ETL {
                                 const res = await fetch(new URL(esriLayerURL + '/updateFeatures'), {
                                     method: 'POST',
                                     headers: {
-                                        'Referer': layer.outgoing.ephemeral.ARCGIS_REFERER,
+                                        'Referer': ephem.ARCGIS_REFERER,
                                         'Content-Type': 'application/x-www-form-urlencoded',
-                                        'X-Esri-Authorization': `Bearer ${layer.outgoing.ephemeral.ARCGIS_TOKEN}`
+                                        'X-Esri-Authorization': `Bearer ${ephem.ARCGIS_TOKEN}`
                                     },
                                     body: new URLSearchParams({
                                         'f': 'json',
@@ -362,9 +371,10 @@ export default class Task extends ETL {
         layer: Static<typeof  TaskLayer>
     ): Promise<EsriDump> {
         const env = await this.env(IncomingInput);
+        const ephem = await this.ephemeral(EphemeralStore, DataFlowType.Incoming);
 
         if (
-            (layer.incoming.ephemeral.ARCGIS_TOKEN && layer.incoming.ephemeral.ARCGIS_EXPIRES)
+            (ephem.ARCGIS_TOKEN && ephem.ARCGIS_EXPIRES)
             || (env.ARCGIS_USERNAME && env.ARCGIS_PASSWORD)
         ) {
             this.auth(layer, DataFlowType.Incoming, {
@@ -373,8 +383,8 @@ export default class Task extends ETL {
                 password: env.ARCGIS_PASSWORD
             })
 
-            config.params.token = layer.incoming.ephemeral.ARCGIS_TOKEN;
-            config.headers.Referer = layer.incoming.ephemeral.ARCGIS_REFERER;
+            config.params.token = ephem.ARCGIS_TOKEN;
+            config.headers.Referer = ephem.ARCGIS_REFERER;
         }
 
         return new EsriDump(env.ARCGIS_URL, config);
