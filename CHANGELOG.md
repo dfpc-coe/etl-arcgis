@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.13.0
+
+- :arrow_up: Update base image to node@22
+
 ### v7.12.0
 
 - :tada: Strongly type ephemeral store
