@@ -319,6 +319,7 @@ export default class Task extends ETL {
                                                 objectid: oid,
                                                 cotuid: feat.id,
                                                 callsign: feat.properties.callsign,
+                                                remarks: feat.properties.remarks || '',
                                                 type: feat.properties.type,
                                                 how: feat.properties.how,
                                                 time: feat.properties.time,
