@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.13.1
+
+- :arrow_up: Update all core deps
+
 ### v7.13.0
 
 - :arrow_up: Update base image to node@22
