@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.14.0
+
+- :rocket: Add the ability to use the queryTopFeatures endpoint
+
 ### v7.13.1
 
 - :arrow_up: Update all core deps

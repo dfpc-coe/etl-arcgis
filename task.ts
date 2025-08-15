@@ -4,7 +4,6 @@ import { geojsonToArcGIS } from '@terraformer/arcgis';
 import { Static, Type, TSchema } from '@sinclair/typebox';
 import type Lambda from 'aws-lambda';
 import { Feature } from '@tak-ps/node-cot';
-import { InputFeatureCollection } from '@tak-ps/etl'
 import ETL, { TaskLayer, Event, SchemaType, handler as internal, local, DataFlowType, InvocationType } from '@tak-ps/etl';
 import EsriDump, {
     EsriDumpConfigInput,
@@ -14,6 +13,9 @@ import EsriDump, {
 const IncomingInput = Type.Object({
     ARCGIS_URL: Type.String(),
     ARCGIS_QUERY: Type.Optional(Type.String()),
+    ARCGIS_QUERY_STRATEGY: Type.String({
+        enum: [ 'Query', 'QueryTopFeatures' ],
+    }),
     ARCGIS_PARAMS: Type.Optional(Type.Array(Type.Object({
         Key: Type.String(),
         Value: Type.String()
@@ -397,7 +399,7 @@ export default class Task extends ETL {
         if (!env.ARCGIS_URL) throw new Error('No ArcGIS_URL Provided');
 
         const config: EsriDumpConfigInput = {
-            approach: EsriDumpConfigApproach.ITER,
+            approach: env.ARCGIS_QUERY_STRATEGY === 'Query' ? EsriDumpConfigApproach.ITER : EsriDumpConfigApproach.TOP_FEATURES_ITER,
             headers: {},
             params: {}
         };
@@ -416,7 +418,7 @@ export default class Task extends ETL {
 
         dumper.fetch();
 
-        const fc: Static<typeof InputFeatureCollection> = {
+        const fc: Static<typeof Feature.InputFeatureCollection> = {
             type: 'FeatureCollection',
             features: []
         };
