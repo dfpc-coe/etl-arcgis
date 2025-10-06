@@ -15,6 +15,7 @@ const IncomingInput = Type.Object({
     ARCGIS_QUERY: Type.Optional(Type.String()),
     ARCGIS_QUERY_STRATEGY: Type.String({
         enum: [ 'Query', 'QueryTopFeatures' ],
+        default: 'Query'
     }),
     ARCGIS_PARAMS: Type.Optional(Type.Array(Type.Object({
         Key: Type.String(),

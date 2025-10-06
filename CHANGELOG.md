@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.15.0
+
+- :rocket: Add default Query Strategy
+
 ### v7.14.0
 
 - :rocket: Add the ability to use the queryTopFeatures endpoint
