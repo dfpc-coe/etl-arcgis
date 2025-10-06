@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.15.1
+
+- :arrow_up: Update ESRIDump 
+
 ### v7.15.0
 
 - :rocket: Add default Query Strategy
