@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.16.0
+
+- :arrow_up: Update Core Deps
+
 ### v7.15.1
 
 - :arrow_up: Update ESRIDump 
