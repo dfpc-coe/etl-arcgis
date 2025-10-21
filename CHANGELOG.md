@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.17.0
+
+- :arrow_up: Update Core Deps to allow Schema Failure to be handled gracefully
+
 ### v7.16.0
 
 - :arrow_up: Update Core Deps
