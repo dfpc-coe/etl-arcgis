@@ -85,6 +85,8 @@ export default class Task extends ETL {
         } else if (flow === DataFlowType.Outgoing && type === SchemaType.Output) {
             return Type.Object({});
         }
+
+        return Type.Object({});
     }
 
     async auth(
@@ -117,7 +119,7 @@ export default class Task extends ETL {
                 })
             });
 
-            if ('auth' in res && typeof res.auth === 'object') {
+            if ('auth' in res && res.auth && typeof res.auth === 'object') {
                 ephem.ARCGIS_TOKEN = String('token' in res.auth ? res.auth.token : '');
                 ephem.ARCGIS_EXPIRES = String('expires' in res.auth ? res.auth.expires : '');
                 ephem.ARCGIS_REFERER = String('referer' in res.auth ? res.auth.referer : '');
@@ -184,7 +186,7 @@ export default class Task extends ETL {
                             return false;
                         }
 
-                        let geometry: Geometry;
+                        let geometry: Geometry | undefined;
                         if (feat.geometry.type === 'Point') {
                             const geom = geojsonToArcGIS(feat.geometry) as Point;
                             if (geom.x === undefined || geom.y === undefined) throw new Error('Incompatible Geometry');
@@ -217,6 +219,14 @@ export default class Task extends ETL {
                             geometry = geom;
                         }
 
+                        if (!geometry) throw new Error(`Unsupported geometry type: ${feat.geometry.type}`);
+
+                        const authHeaders = new Headers({
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Esri-Authorization': `Bearer ${ephem.ARCGIS_TOKEN}`
+                        });
+                        if (ephem.ARCGIS_REFERER) authHeaders.set('Referer', ephem.ARCGIS_REFERER);
+
                         geometry.spatialReference = {
                             wkid: 102100,
                             latestWkid: 3857
@@ -225,11 +235,7 @@ export default class Task extends ETL {
                         if (env.PRESERVE_HISTORY) {
                             const res = await fetch(new URL(esriLayerURL + '/addFeatures'), {
                                 method: 'POST',
-                                headers: {
-                                    'Referer': ephem.ARCGIS_REFERER,
-                                    'Content-Type': 'application/x-www-form-urlencoded',
-                                    'X-Esri-Authorization': `Bearer ${ephem.ARCGIS_TOKEN}`
-                                },
+                                headers: authHeaders,
                                 body: new URLSearchParams({
                                     'f': 'json',
                                     'features': JSON.stringify([{
@@ -260,11 +266,7 @@ export default class Task extends ETL {
                         } else {
                             const res_query = await fetch(esriLayerURL + '/query', {
                                 method: 'POST',
-                                headers: {
-                                    'Referer': ephem.ARCGIS_REFERER,
-                                    'Content-Type': 'application/x-www-form-urlencoded',
-                                    'X-Esri-Authorization': `Bearer ${ephem.ARCGIS_TOKEN}`
-                                },
+                                headers: authHeaders,
                                 body: new URLSearchParams({
                                     'f': 'json',
                                     'where': `cotuid='${feat.id}'`,
@@ -282,11 +284,7 @@ export default class Task extends ETL {
                             if (!query.features.length) {
                                 const res = await fetch(new URL(esriLayerURL + '/addFeatures'), {
                                     method: 'POST',
-                                    headers: {
-                                        'Referer': ephem.ARCGIS_REFERER,
-                                        'Content-Type': 'application/x-www-form-urlencoded',
-                                        'X-Esri-Authorization': `Bearer ${ephem.ARCGIS_TOKEN}`
-                                    },
+                                    headers: authHeaders,
                                     body: new URLSearchParams({
                                         'f': 'json',
                                         'features': JSON.stringify([{
@@ -319,11 +317,7 @@ export default class Task extends ETL {
 
                                 const res = await fetch(new URL(esriLayerURL + '/updateFeatures'), {
                                     method: 'POST',
-                                    headers: {
-                                        'Referer': ephem.ARCGIS_REFERER,
-                                        'Content-Type': 'application/x-www-form-urlencoded',
-                                        'X-Esri-Authorization': `Bearer ${ephem.ARCGIS_TOKEN}`
-                                    },
+                                    headers: authHeaders,
                                     body: new URLSearchParams({
                                         'f': 'json',
                                         'features': JSON.stringify([{
@@ -380,14 +374,17 @@ export default class Task extends ETL {
             (ephem.ARCGIS_TOKEN && ephem.ARCGIS_EXPIRES)
             || (env.ARCGIS_USERNAME && env.ARCGIS_PASSWORD)
         ) {
+            const params = config.params ?? (config.params = {});
+            const headers = config.headers ?? (config.headers = {});
+
             this.auth(layer, DataFlowType.Incoming, {
                 url: env.ARCGIS_PORTAL || env.ARCGIS_URL,
-                username: env.ARCGIS_USERNAME,
-                password: env.ARCGIS_PASSWORD
+                username: env.ARCGIS_USERNAME || '',
+                password: env.ARCGIS_PASSWORD || ''
             })
 
-            config.params.token = ephem.ARCGIS_TOKEN;
-            config.headers.Referer = ephem.ARCGIS_REFERER;
+            if (ephem.ARCGIS_TOKEN) params.token = ephem.ARCGIS_TOKEN;
+            if (ephem.ARCGIS_REFERER) headers.Referer = ephem.ARCGIS_REFERER;
         }
 
         return new EsriDump(env.ARCGIS_URL, config);
@@ -404,14 +401,15 @@ export default class Task extends ETL {
             headers: {},
             params: {}
         };
+        const params = config.params ?? (config.params = {});
 
         if (env.ARCGIS_QUERY) {
-            config.params.where = env.ARCGIS_QUERY;
+            params.where = env.ARCGIS_QUERY;
         }
 
         if (env.ARCGIS_PARAMS && env.ARCGIS_PARAMS.length) {
             for (const param of env.ARCGIS_PARAMS) {
-                config.params[param.Key] = param.Value;
+                params[param.Key] = param.Value;
             }
         }
 
@@ -447,7 +445,7 @@ export default class Task extends ETL {
                 } else {
                     fc.features.push(feature)
                 }
-            }).on('error', (err) => {
+            }).on('error', (err: unknown) => {
                 reject(err);
             }).on('done', () => {
                 return resolve();
