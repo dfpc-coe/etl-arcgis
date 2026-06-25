@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.26.0
+
+- :arrow_up: Update ESRI-Dump
+
 ### v7.25.0
 
 - :arrow_up: Update ESRI-Dump
