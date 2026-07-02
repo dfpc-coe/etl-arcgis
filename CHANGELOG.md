@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.27.0
+
+- :arrow_up: Update Core Dependencies
+
 ### v7.26.0
 
 - :arrow_up: Update ESRI-Dump
