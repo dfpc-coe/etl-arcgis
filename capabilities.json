@@ -1,0 +1,40 @@
+{
+    "version": "1.0",
+    "name": "Esri ArcGIS",
+    "description": "Synchronizes features with Esri ArcGIS: ingests ArcGIS Feature and Map Server layers to the map on a schedule and optionally pushes map features back out to ArcGIS.",
+    "compute": {
+        "memory": 1024,
+        "timeout": 120
+    },
+    "permissions": [
+        {
+            "resource": "feature:*",
+            "required": true,
+            "description": "Posts ingested ArcGIS features to the map and reads map features to push out to ArcGIS"
+        },
+        {
+            "resource": "esri:*",
+            "required": true,
+            "description": "Uses the CloudTAK ESRI proxy to authenticate against ArcGIS Portals and Servers"
+        }
+    ],
+    "invocations": {
+        "incoming": {
+            "schedule": {
+                "description": "Polls the configured ArcGIS layer for updated features on a schedule.",
+                "default": {
+                    "enabled": true,
+                    "schedule": "rate(1 minute)"
+                }
+            }
+        },
+        "outgoing": {
+            "types": [
+                {
+                    "resource": "feature:*",
+                    "description": "Accepts map features to write out to the configured ArcGIS Feature Services"
+                }
+            ]
+        }
+    }
+}
