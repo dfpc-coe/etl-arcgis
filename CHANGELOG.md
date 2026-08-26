@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.29.1
+
+- :bug: Pass permission validation
+
 ### v7.29.0
 
 - :rocket: Allow querying layers without extent info

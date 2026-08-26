@@ -11,11 +11,6 @@
             "resource": "feature:*",
             "required": true,
             "description": "Posts ingested ArcGIS features to the map and reads map features to push out to ArcGIS"
-        },
-        {
-            "resource": "esri:*",
-            "required": true,
-            "description": "Uses the CloudTAK ESRI proxy to authenticate against ArcGIS Portals and Servers"
         }
     ],
     "invocations": {
