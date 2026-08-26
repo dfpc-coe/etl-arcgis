@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.29.0
+
+- :rocket: Allow querying layers without extent info
+
 ### v7.28.0
 
 - :rocket: Add Capabilities document

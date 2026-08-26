@@ -29,7 +29,7 @@
         "@tak-ps/etl": "^10.0.0",
         "@terraformer/arcgis": "^2.1.2",
         "@types/arcgis-rest-api": "^10.4.8",
-        "esri-dump": "^6.0.0",
+        "esri-dump": "^6.6.0",
         "proj4": "^2.15.0"
     }
 }
