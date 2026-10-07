@@ -26,7 +26,7 @@
     },
     "dependencies": {
         "@sinclair/typebox": "^0.34.0",
-        "@tak-ps/etl": "^10.0.0",
+        "@tak-ps/etl": "^10.22.2",
         "@terraformer/arcgis": "^2.1.2",
         "@types/arcgis-rest-api": "^10.4.8",
         "esri-dump": "^6.6.0",
