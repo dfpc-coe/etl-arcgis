@@ -12,6 +12,12 @@
 
 ### Pending Release
 
+### v7.35.0
+
+- :arrow_up: Migrate to TS7 for blazing build times
+- :arrow_up: Migrate off ESLint onto OXLint for blazing lint times
+- :bug: Fix numerous small bugs in the codebase surfaced by OXLint
+
 ### v7.34.0
 
 - :bug: Add URL Escaping to ensure query params are properly encoded
