@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v7.35.1 - 2026-11-17
+
+- :arrow_up: Update Core Dependencies
+
 ### v7.35.0
 
 - :arrow_up: Migrate to TS7 for blazing build times

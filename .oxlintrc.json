@@ -74,5 +74,23 @@
         "unicorn/no-negated-condition": "off",
         "unicorn/no-static-only-class": "off",
         "unicorn/no-useless-undefined": "off"
-    }
+    },
+    "ignorePatterns": [
+        "dist",
+        "coverage"
+    ],
+    "overrides": [
+        {
+            "files": [
+                "test/**"
+            ],
+            "rules": {
+                "typescript/no-unsafe-type-assertion": "off",
+                "typescript/no-non-null-assertion": "off",
+                "typescript/no-deprecated": "off",
+                "unicorn/no-array-sort": "off",
+                "typescript/require-array-sort-compare": "off"
+            }
+        }
+    ]
 }
