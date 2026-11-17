@@ -269,8 +269,8 @@ export default class Task extends ETL {
                                 headers: authHeaders,
                                 body: new URLSearchParams({
                                     'f': 'json',
-                                    'where': `cotuid='${feat.id}'`,
-                                        'outFields': '*'
+                                    'where': `cotuid='${String(feat.id).replace(/'/g, "''")}'`,
+                                    'outFields': '*'
                                 })
                             });
 

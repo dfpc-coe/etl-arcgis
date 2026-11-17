@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v7.34.0
+
+- :bug: Add URL Escaping to ensure query params are properly encoded
+
 ### v7.33.0
 
 - :arrow_up: Update `@tak-ps/etl` to 11.x - Output schemas are published as named schemas, as required by CloudTAK v14
